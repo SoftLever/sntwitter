@@ -1,0 +1,31 @@
+version: '3.9'
+
+services:
+  web:
+    image: servicenow_twitter
+    build: .
+    env_file:
+      - .env
+    command: gunicorn servicenow_twitter_web.wsgi:application --bind 0.0.0.0:8000 --limit-request-line 0 --access-logfile gunicorn.log --workers=4
+    ports:
+      - "8000:8000"
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./nginx/conf/:/etc/nginx/conf.d/:ro
+      - ./certbot/www:/var/www/certbot/:ro
+      - ./certbot/conf/:/etc/nginx/ssl/:ro
+    restart: "unless-stopped"
+    depends_on:
+      web:
+        condition: service_started
+
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./certbot/www/:/var/www/certbot/:rw
+      - ./certbot/conf/:/etc/letsencrypt/:rw

@@ -1,0 +1,138 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>SnTwitter Signup</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="author" content="colorlib.com">
+
+        <!-- MATERIAL DESIGN ICONIC FONT -->
+        <link rel="stylesheet" href="{% static 'fonts/material-design-iconic-font/css/material-design-iconic-font.css' %}">
+
+        <!-- STYLE CSS -->
+        <link rel="stylesheet" href="{% static 'css/style.css' %}">
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-643XRPBDHD"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+
+          gtag('config', 'G-643XRPBDHD');
+        </script>
+    </head>
+    <body>
+        <div class="wrapper">
+            <div class="image-holder">
+                <img src="{% static 'img/sntwitter.png' %}" alt="">
+            </div>
+            <form>
+                <div id="wizard">
+                    <!-- SECTION 1 -->
+                    <h4></h4>
+                    <section>
+                        <div class="form-row form-group">
+                            <div class="form-holder">
+                                <label for="">
+                                First Name *
+                                </label>
+                                <input type="text" class="form-control primary-details" placeholder="John" id="first_name" required>
+                            </div>
+                            <div class="form-holder">
+                                <label for="">
+                                Last Name *
+                                </label>
+                                <input type="text" class="form-control primary-details" placeholder="Doe" id="last_name">
+                            </div>
+                        </div>  
+                        <div class="form-row">
+                            <label for="">
+                                Company Name *
+                            </label>
+                            <input type="text" class="form-control primary-details" placeholder="Unikomm" id="company_name">
+                        </div>
+                        <div class="form-row">
+                            <label for="">
+                                Email *
+                            </label>
+                            <input type="email" class="form-control primary-details" placeholder="workemail@example.com" id="email" style="margin-bottom: 20px">
+                        </div>
+                        <div class="form-row">
+                            <label for="">
+                                Password *
+                            </label>
+                            <input type="password" class="form-control primary-details" placeholder="%jL#96Ynvl8q" id="password" style="margin-bottom: 20px">
+                        </div>
+                    </section>
+                    
+                    <!-- SECTION 2 -->
+                    <h4></h4>
+                    <section>
+                        <div class="form-row">
+                            <label for="">
+                                Instance URL *
+                            </label>
+                            <input type="text" class="form-control sn-details" placeholder="https://dev49000.service-now.com" id="sn_url">
+                        </div>
+                        <div class="form-row form-group">
+                            <div class="form-holder">
+                                <label for="">
+                                Admin Username *
+                                </label>
+                                <input type="text" class="form-control sn-details" placeholder="admin" id="sn_admin">
+                            </div>
+                            <div class="form-holder">
+                                <label for="">
+                                Admin Password *
+                                </label>
+                                <input type="text" class="form-control sn-details" placeholder="P19mmhbRtAOJ" id="sn_admin_pwd">
+                            </div>
+                        </div>
+                        <div class="form-row form-group">
+                            <div class="form-holder">
+                                <label for="">
+                                Customer Username *
+                                </label>
+                                <input type="text" class="form-control sn-details" placeholder="twitter" id="sn_customer">
+                            </div>
+                            <div class="form-holder">
+                                <label for="">
+                                Customer Password *
+                                </label>
+                                <input type="text" class="form-control sn-details" placeholder="JOAtRbhmm91P" id="sn_customer_pwd">
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- SECTION 3 -->
+                    <h4></h4>
+                    <section>
+                        <div class="checkbox-circle">
+                            <label class="active">
+                                <!--<input type="radio" name="billing method" value="Direct bank transfer" checked>Direct bank transfer>-->
+                                Twitter integraion
+                                <span class="checkmark"></span>
+                                <div class="tooltip">
+                                    The last step is to connect your Twitter Account. Clicking 'Go to Twitter' below will redirect you to Twitter. Log in and authorize.
+                                </div>
+                            </label>
+                        </div>
+                    </section>
+                    <!-- SECTION 4 -->
+                    <h4></h4>
+                    <section>
+                    </section>
+                </div>
+            </form>
+        </div>
+
+        <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+        
+        <!-- JQUERY STEP -->
+        <script src="{% static 'js/jquery.steps.js' %}"></script>
+
+        <script src="{% static 'js/main2.js' %}"></script>
+<!-- Template created and distributed by Colorlib -->
+</body>
+</html>
