@@ -138,8 +138,7 @@ class Events(APIView):
     SERVICENOW_HEADERS = {"Content-Type":"application/json","Accept":"application/json"}
 
     def post(self, request):
-        user_id = request.POST.get("user_id")
-        print(user_id)
+        user_id = request.POST.get("api_key")
 
         # Check if user exists
         User = get_user_model()
@@ -151,8 +150,6 @@ class Events(APIView):
         message = request.POST.get("message")
         attachment = request.POST.get("attachment")
         target = request.POST.get("target")
-        print(message)
-        print(target)
 
         # Get API keys from database
         keys = Twitter.objects.filter(user=sys_user)
