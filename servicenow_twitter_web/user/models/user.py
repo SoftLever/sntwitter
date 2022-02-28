@@ -82,7 +82,5 @@ class Servicenow(models.Model):
     instance_url = models.CharField(max_length=200)
     admin_user = models.CharField(max_length=40)
     admin_password = models.CharField(max_length=40)
-    customer_user = models.CharField(max_length=40)
-    customer_password = models.CharField(max_length=40)
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)

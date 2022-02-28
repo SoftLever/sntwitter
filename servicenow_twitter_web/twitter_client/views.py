@@ -10,7 +10,7 @@ import tweepy
 from .models import Twitter
 
 # For activity subscription
-from twitter_client.management.commands.extended_tweepy import API2
+from twitter_client.management.commands.extended_tweepy import API
 
 import traceback
 

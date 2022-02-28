@@ -3,8 +3,8 @@ from django.conf import settings
 
 # Override API class to add new methods that are not offered by tweepy
 # e.g getting media, all account activity functionality
-class API2(API):
-    def request(self, method, url, params={}):
+class API(API):
+    def request2(self, method, url, params={}):
         # Apply authentication
         auth = None
         if self.auth:

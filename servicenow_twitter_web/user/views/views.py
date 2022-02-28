@@ -13,39 +13,9 @@ from twitter_client.models import Twitter
 
 # For activity deactivation
 import tweepy
-from twitter_client.management.commands.extended_tweepy import API2
+from twitter_client.management.commands.extended_tweepy import API
 
 import traceback
-
-
-def landing(request):
-	return render(request, "index.html")
-
-
-def signup(request):
-    # POST adds some complications - We'll use GET
-    # for now and switch to POST when implemeting API
-    if request.method == "GET" and request.GET.get("first_name"):
-        first_name = request.GET.get('first_name')
-        last_name = request.GET.get('last_name')
-        email = request.GET.get('email')
-        company_name = request.GET.get('company_name')
-        password = request.GET.get('password')
-
-        User = get_user_model()
-
-        user_instance = User.objects.create_user(
-        	username=email, first_name=first_name,
-        	last_name=last_name, company_name=company_name,
-        	password=password
-        )
-        user_instance.save()
-
-        # Log in instantly
-        user = authenticate(username=email, password=password)
-        login(request, user)
-
-    return render(request, "signup.html")
 
 
 def registerServicenow(request):
@@ -68,27 +38,6 @@ def registerServicenow(request):
 
     return HttpResponse("Added Servicenow details")
 
-
-def loginUser(request):
-
-    if request.user.is_authenticated:
-        return redirect('dashboard')
-
-    if request.method == "POST":
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        user = authenticate(username=username, password=password)
-
-        if user is not None:
-            login(request, user)
-            return redirect('dashboard')
-
-    return render(request, 'login.html')
-
-
-def logoutUser(request):
-    logout(request)
-    return redirect('login')
 
 @login_required
 def dashboard(request):

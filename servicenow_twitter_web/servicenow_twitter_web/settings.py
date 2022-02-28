@@ -83,8 +83,8 @@ AUTH_USER_MODEL = 'user.User'
 
 # Django REST Framework Settings
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [],
-    'DEFAULT_PERMISSION_CLASSES': [],
+    'DEFAULT_AUTHENTICATION_CLASSES': ['knox.auth.TokenAuthentication'],
+    'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
 }
 
 # Django REST Knox Settings
@@ -152,17 +152,4 @@ CONSUMER_SECRET = os.environ.get("CONSUMER_SECRET")
 ACCESS_TOKEN = os.environ.get("ACCESS_TOKEN")
 ACCESS_SECRET = os.environ.get("ACCESS_SECRET")
 CALLBACK_URL = os.environ.get("CALLBACK_URL", "http://127.0.0.1:8000/addtwitteraccount/confirm/")
-TWITTER_USER_ID = os.environ.get("TWITTER_USER_ID")
-TWITTER_USERNAME = os.environ.get("TWITTER_USERNAME")
-WEBHOOK_URL = os.environ.get("WEBHOOK_URL", "https://127.0.0.1:8000/activity")
 DEV_ENV = os.environ.get("DEV_ENV", "production")
-
-# ServiceNow configs
-SERVICENOW_URL = os.environ.get("SERVICENOW_URL")
-SERVICENOW_USER = os.environ.get("SERVICENOW_USER")
-SERVICENOW_PWD = os.environ.get("SERVICENOW_PWD")
-SN_TWITTER_CASE_ACCOUNT = os.environ.get("SN_TWITTER_CASE_ACCOUNT")
-
-SERVICENOW_CUSTOMER_ACCOUNT = os.environ.get("SERVICENOW_CUSTOMER_ACCOUNT")
-SERVICENOW_CUSTOMER_ACCOUNT_PWD = os.environ.get("SERVICENOW_CUSTOMER_ACCOUNT_PWD")
-SERVICENOW_CUSTOMER_SYS_ID = os.environ.get("SERVICENOW_CUSTOMER_SYS_ID")

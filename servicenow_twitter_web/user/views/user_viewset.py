@@ -58,11 +58,13 @@ class UserViewSet(viewsets.ModelViewSet):
     def destroy(self, request, pk=None):
         user = self.get_object()
         user.delete()
+        print(user)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['patch'], permission_classes=[IsAdminOrIsSelf], url_path='set-password')
     def set_password(self, request, pk=None):
         user = self.get_object()
+        print(user)
         password = request.data.get('password')
         if password:
             user.set_password(password)
