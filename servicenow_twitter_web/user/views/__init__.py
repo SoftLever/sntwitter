@@ -6,15 +6,10 @@ from .auth import (
     LogoutAllView,
 )
 
-from .views import (
-    registerServicenow
-)
-
 
 __all__ = [
     'UserViewSet',
     'LoginView',
     'LogoutView',
-    'LogoutAllView',
-    'registerServicenow'
+    'LogoutAllView'
 ]

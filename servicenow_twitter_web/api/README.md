@@ -79,6 +79,71 @@ Required Permissions: Admin
     curl -X DELETE http://example.com/auth/users/user_id/ --header "Content-Type: application/json" --header "Authorization: Token user_token"
 
 
+### Adding Servicenow details for the authenticated user
+
+Required Permissions: Self
+
+    curl -X POST http://127.0.0.1:8000/api/servicenow-details/ --header "Content-Type: application/json" --header "Authorization: Token f988a990271bc66171eafd7091d681aedeccce3a1f4b03f3644a532dc74e2ae9" --data '{"instance_url": "https://dev119258.service-now.com", "admin_user": "admin", "admin_password": "dcyHPleT2F3C"}'
+
+
+### Adding Servicenow details for another user
+
+Required Permissions: Admin
+
+    curl -X POST http://127.0.0.1:8000/api/servicenow-details/ --header "Content-Type: application/json" --header "Authorization: Token d4f74ff43e09c019f741b31a67e33dc933d314fadcfc5fb79f234ff9063bcabf" --data '{"instance_url": "https://dev119258.service-now.com", "admin_user": "admin", "admin_password": "dcyHPleT2F3C", "user": "a4279da2-e69d-495f-92ee-5ff59da4baf8"}'
+
+
+If you receive this error; `{"user":["This field must be unique."]}` it means the specified user already has a Servicenow record.
+
+
+### Listing Servicenow details
+
+Required Permissions: Admin
+
+    curl http://127.0.0.1:8000/api/servicenow-details/ --header "Content-Type: application/json" --header "Authorization: Token f988a990271bc66171eafd7091d681aedeccce3a1f4b03f3644a532dc74e2ae9"
+
+
+### Get details for a single Servicenow record
+
+Required Permissions: Self or Admin
+
+    curl http://127.0.0.1:8000/api/servicenow-details/2/ --header "Content-Type: application/json" --header "Authorization: Token f988a990271bc66171eafd7091d681aedeccce3a1f4b03f3644a532dc74e2ae9"
+
+
+### Updating Servicenow details partially
+
+    curl -X PATCH http://127.0.0.1:8000/api/servicenow-details/2/ --header "Content-Type: application/json" --header "Authorization: Token f988a990271bc66171eafd7091d681aedeccce3a1f4b03f3644a532dc74e2ae9" --data '{"admin_user": "Twitter", "admin_password": "Y7Ifer3"}'
+
+
+### Delete Servicenow details for a user
+
+Required Permissions: Self or Admin
+
+    curl -X DELETE http://127.0.0.1:8000/api/servicenow-details/3/ --header "Content-Type: application/json" --header "Authorization: Token f988a990271bc66171eafd7091d681aedeccce3a1f4b03f3644a532dc74e2ae9"
+
+
+### Getting a twitter authentication URL
+
+    curl http://127.0.0.1:8000/api/twitter-auth --header "Authorization: Token f988a990271bc66171eafd7091d681aedeccce3a1f4b03f3644a532dc74e2ae9"
+
+
+### List all Twitter details
+
+Required Permissions: Admin
+
+    curl http://127.0.0.1:8000/api/twitter-details/ --header "Authorization: Token d4f74ff43e09c019f741b31a67e33dc933d314fadcfc5fb79f234ff9063bcabf"
+
+
+### Retrieve Twitter details for a single user
+
+    curl http://127.0.0.1:8000/api/twitter-details/1/ --header "Authorization: Token f988a990271bc66171eafd7091d681aedeccce3a1f4b03f3644a532dc74e2ae9"
+
+
+### Unsubscribe from the authenticated user's Twitter
+
+    curl -X DELETE http://127.0.0.1:8000/api/twitter-revoke/ --header "Authorization: Token f988a990271bc66171eafd7091d681aedeccce3a1f4b03f3644a532dc74e2ae9"
+
+
 ## Other endpoints
 
 This section documents endpoints that will be used by Servicenow instances and Twitter. The only configuration needed on a servicenow instance is importing the required update set. The APIKey table also needs to have at least one API token, generated from the `/auth/login/` endpoint.

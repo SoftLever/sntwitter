@@ -8,7 +8,7 @@ import requests
 
 from django.conf import settings
 
-from twitter_client.models import Twitter
+from user.models import Twitter
 from user.models import Servicenow
 from django.contrib.auth import get_user_model
 
@@ -31,8 +31,6 @@ import json
 
 
 class Events(APIView):
-    SERVICENOW_HEADERS = {"Content-Type":"application/json","Accept":"application/json"}
-
     def post(self, request):
         message = request.POST.get("message")
         target = request.POST.get("target")

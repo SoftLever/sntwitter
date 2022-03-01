@@ -1,7 +1,8 @@
-from .user import User, Servicenow
+from .user import User, Servicenow, Twitter
 
 
 __all__ = [
     'User',
-    'Servicenow'
+    'Servicenow',
+    'Twitter'
 ]
