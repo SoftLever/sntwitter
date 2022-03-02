@@ -6,6 +6,7 @@ from .twitter_auth import GetUrl, Subscribe, Unsubscribe
 
 __all__ = [
     'ServicenowViewSet',
+    'TwitterViewSet',
     'Events',
     'TwitterActivity',
     'GetUrl',

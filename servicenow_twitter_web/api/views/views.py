@@ -17,17 +17,14 @@ import base64
 import hashlib
 import hmac
 
-# For processing attachments
-from twitter_client.management.commands.modules import getAuth
 from twitter_client.management.commands.extended_tweepy import API
-import time
 
 # For checking if event requests are valid
 from django.core.exceptions import ObjectDoesNotExist
 
-import traceback
-
 import json
+
+import tweepy
 
 
 class Events(APIView):
@@ -59,6 +56,9 @@ class Events(APIView):
 
 
 class TwitterActivity(APIView):
+    authentication_classes = []
+    permission_classes = []
+
     def get(self, request):
         # creates HMAC SHA-256 hash from incomming token and your consumer secret
         sha256_hash_digest = hmac.new(
@@ -118,7 +118,7 @@ class TwitterActivity(APIView):
                     twitter_username = f"{user.get('name')} ({user.get('screen_name')})"
 
                     response = requests.post(
-                        f"{sn.instance_url}/api/x_745589_sntwitter/test_flow",
+                        f"{sn.instance_url}/api/x_745589_sntwitter/create_or_update_case",
                         auth=(sn.admin_user, sn.admin_password),
                         data=json.dumps(
                             {
@@ -141,7 +141,7 @@ class TwitterActivity(APIView):
                 attachment = None
 
                 response = requests.post(
-                    f"{sn.instance_url}/api/x_745589_sntwitter/test_flow",
+                    f"{sn.instance_url}/api/x_745589_sntwitter/create_or_update_case",
                     auth=(sn.admin_user, sn.admin_password),
                     data=json.dumps(
                         {

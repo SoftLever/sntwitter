@@ -95,7 +95,7 @@ class Twitter(models.Model):
     access_token_secret = models.CharField(max_length=200, unique=True)
     subscription_id = models.CharField(max_length=40, null=True)
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.handle

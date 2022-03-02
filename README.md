@@ -7,55 +7,164 @@ The following flowchart shows how the program works at a basic level
 
 # INITIAL SETUP
 
-Pull this project and follow the steps below.
+    python manage.py migrate
+
+    python manage.py createsuperuser
 
 
-## 1. Django
+## Admin API Key
 
-Generate a strong secret key for your django app and store it in `SECRET_KEY`
-
-Store your ip address or domain name in `ALLOWED_HOSTS`
-
-## 2. ServiceNow (Per User)
-
-### Create New User
-
-In order to differentiate messages sent from Twitter by customers and those sent from ServiceNow, we will need to create a new user. To create a new user in ServiceNow, go to `User Administration` -> `Users` -> `New`
-
-Save the user ID and password in `SERVICENOW_CUSTOMER_ACCOUNT` and `SERVICENOW_CUSTOMER_ACCOUNT_PWD` environment variables.
-
-Assign `csm_ws_integration` role to the user.
-
-Copy the user sys_id to `SERVICENOW_CUSTOMER_SYS_ID`. You can get the sys_id by navigating to `user menu` -> `Copy sys_id`
+    curl -X POST http://example.com/auth/login/ --data '{"username": "admin@example.com" ,"password":"password"}' --header "Content-Type: application/json"
 
 
-## Custom Case Fields
+# API Documentation
 
-We need a way of differentiating cases opened on twitter. For this, we'll create a custom field called `twitter_user_id` of type `string` and length `40` in the Case form. Follow [this](https://docs.servicenow.com/bundle/rome-platform-administration/page/administer/field-administration/task/t_CreatingNewFields.html) guide
+## Create a new user (Create)
 
-![Custom twitter ID](/docs/twitter_id.gif "Custom twitter id field")
+Required Permissions: Admin
 
-
-Repeat the step above for a field called `twitter_username`
-
-
-## 3. Twitter Developer
-
-### Callback URL
-
-This is required by Twitter to complete OAuth1.0a. You must whitelist the URL to which the user will be redirected after authentication.
-
-You must also add the callback url in the `CALLBACK_URL` environment variable.
-
-The callback url should be `https://example.com/addtwitteraccount/confirm/`
-
-### Twitter APP Keys
-
-`CONSUMER_KEY`
-
-`CONSUMER_SECRET`
+    curl -X POST http://example.com/auth/users/ --header "Content-Type: application/json" --header "Authorization: Token admin_token" --data '{"username": "customer@example.com" , "first_name": "Tony", "last_name": "Stark", "company_name":"Stark Industries", "password": "password"}'
 
 
-## Build
+## List Users (List)
 
-    docker-compose up --build -d
+Required Permissions: Admin
+
+    curl http://example.com/auth/users/ --header "Authorization: Token admin_token"
+
+
+## Log user in (Generate Token)
+
+    curl -X POST http://example.com/auth/login/ --data '{"username": "customer@example.com" ,"password":"password"}' --header "Content-Type: application/json"
+
+
+The generated token will expire in 30 days.
+
+
+## Get a single user (Retrieve)
+
+Required Permissions: User or Admin
+
+    curl http://example.com/auth/users/user_id/ --header "Authorization: Token user_token"
+
+
+## Update User Details Partially (Partial Update)
+
+Required Permissions: User or Admin
+
+    curl -X PATCH http://example.com/auth/users/user_id/ --header "Content-Type: application/json" --header "Authorization: Token user_token" --data '{"last_name": "Jarvis"}'
+
+
+## Update all user details (Update)
+
+Required Auth: User or Admin
+
+    curl -X PUT http://example.com/auth/users/user_id/ --header "Content-Type: application/json" --header "Authorization: Token user_token" --data '{"first_name": "Pepper", "last_name": "Pots", "username": "customer@example.com", "company_name": "The Stark Company"}'
+
+
+## Log user out (Revoke token)
+
+    curl -X POST http://example.com/auth/logout/ --header "Content-Type: application/json" --header "Authorization: Token user_token"
+
+
+## Log out of all sessions (Revoke all tokens)
+
+    curl -X POST http://example.com/auth/logout-all/ --header "Content-Type: application/json" --header "Authorization: Token user_token"
+
+
+## Set a password for the user -> Useful for reset functionality
+
+Required Permissions: User or Admin
+
+    curl -X PATCH http://example.com/auth/users/user_id/set-password/ --header "Content-Type: application/json" --header "Authorization: Token user_token" --data '{"password": "password"}'
+
+
+## Delete a user
+
+Required Permissions: Admin
+
+    curl -X DELETE http://example.com/auth/users/user_id/ --header "Content-Type: application/json" --header "Authorization: Token user_token"
+
+
+## Adding Servicenow details for the authenticated user
+
+Required Permissions: Self
+
+    curl -X POST http://example.com/api/servicenow-details/ --header "Content-Type: application/json" --header "Authorization: Token f988a990271bc66171eafd7091d681aedeccce3a1f4b03f3644a532dc74e2ae9" --data '{"instance_url": "https://dev119258.service-now.com", "admin_user": "admin", "admin_password": "dcyHPleT2F3C"}'
+
+
+## Adding Servicenow details for another user
+
+Required Permissions: Admin
+
+    curl -X POST http://example.com/api/servicenow-details/ --header "Content-Type: application/json" --header "Authorization: Token d4f74ff43e09c019f741b31a67e33dc933d314fadcfc5fb79f234ff9063bcabf" --data '{"instance_url": "https://dev119258.service-now.com", "admin_user": "admin", "admin_password": "dcyHPleT2F3C", "user": "a4279da2-e69d-495f-92ee-5ff59da4baf8"}'
+
+
+If you receive this error; `{"user":["This field must be unique."]}` it means the specified user already has a Servicenow record.
+
+
+## Listing Servicenow details
+
+Required Permissions: Admin
+
+    curl http://example.com/api/servicenow-details/ --header "Content-Type: application/json" --header "Authorization: Token f988a990271bc66171eafd7091d681aedeccce3a1f4b03f3644a532dc74e2ae9"
+
+
+## Get details for a single Servicenow record
+
+Required Permissions: Self or Admin
+
+    curl http://example.com/api/servicenow-details/2/ --header "Content-Type: application/json" --header "Authorization: Token f988a990271bc66171eafd7091d681aedeccce3a1f4b03f3644a532dc74e2ae9"
+
+
+## Updating Servicenow details partially
+
+    curl -X PATCH http://example.com/api/servicenow-details/2/ --header "Content-Type: application/json" --header "Authorization: Token f988a990271bc66171eafd7091d681aedeccce3a1f4b03f3644a532dc74e2ae9" --data '{"admin_user": "Twitter", "admin_password": "Y7Ifer3"}'
+
+
+## Delete Servicenow details for a user
+
+Required Permissions: Self or Admin
+
+    curl -X DELETE http://example.com/api/servicenow-details/3/ --header "Content-Type: application/json" --header "Authorization: Token f988a990271bc66171eafd7091d681aedeccce3a1f4b03f3644a532dc74e2ae9"
+
+
+## Getting a twitter authentication URL
+
+    curl http://example.com/api/twitter-auth --header "Authorization: Token f988a990271bc66171eafd7091d681aedeccce3a1f4b03f3644a532dc74e2ae9"
+
+
+## List all Twitter details
+
+Required Permissions: Admin
+
+    curl http://example.com/api/twitter-details/ --header "Authorization: Token d4f74ff43e09c019f741b31a67e33dc933d314fadcfc5fb79f234ff9063bcabf"
+
+
+## Retrieve Twitter details for a single user
+
+    curl http://example.com/api/twitter-details/1/ --header "Authorization: Token f988a990271bc66171eafd7091d681aedeccce3a1f4b03f3644a532dc74e2ae9"
+
+
+## Unsubscribe from the authenticated user's Twitter
+
+    curl -X DELETE http://example.com/api/twitter-revoke/ --header "Authorization: Token f988a990271bc66171eafd7091d681aedeccce3a1f4b03f3644a532dc74e2ae9"
+
+
+## Other endpoints
+
+This section documents endpoints that will be used by Servicenow instances and Twitter. The only configuration needed on a servicenow instance is importing the required update set. The APIKey table also needs to have at least one API token, generated from the `/auth/login/` endpoint.
+
+
+### Send a servicenow case event
+    
+    curl -X POST http://example.com/api/events/ --header "Content-Type: application/json" --header "Authorization: Token user_token"
+
+CURL is purely for illustrative purposes. These API call will actually run from a Servicenow instance.
+
+### Receive events from Twitter
+
+    https://example.com/api/activity/
+
+This endpoint receives account activity events from Twitter, processes messages if the activity is either a direct message or mention, then sends the results to the relevant Servicenow instance.
+

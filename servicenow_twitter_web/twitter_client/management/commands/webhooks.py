@@ -1,8 +1,6 @@
 from django.core.management.base import BaseCommand
-from twitter_client.management.commands.extended_tweepy import API2
+from .extended_tweepy import API
 import tweepy
-from .modules import getAuth
-import requests
 
 from django.conf import settings
 
@@ -11,14 +9,24 @@ class Command(BaseCommand):
     help = 'Register new webook'
 
     # API object with OAuth1
-    api = API2(getAuth(), wait_on_rate_limit=True)
+    auth = tweepy.OAuth1UserHandler(
+        settings.CONSUMER_KEY, settings.CONSUMER_SECRET,
+        settings.ACCESS_TOKEN, settings.ACCESS_SECRET
+    )
+
+    api = API(auth, wait_on_rate_limit=True)
 
     # Application-only auth
-    api2 = API2(getAuth("application"), wait_on_rate_limit=True)
+    auth2 = tweepy.OAuth2AppHandler(
+        settings.CONSUMER_KEY, settings.CONSUMER_SECRET,
+    )
+
+    api2 = API(auth2, wait_on_rate_limit=True)
 
     def add_arguments(self, parser):
         parser.add_argument('action', type=str)
         parser.add_argument('--url', type=str) # if action is register
+        parser.add_argument('--webhook_id', type=str)
 
     def registerWebHook(self, url):
         webhook = self.api.registerWebHook(
@@ -27,6 +35,14 @@ class Command(BaseCommand):
         print(webhook)
 
         return webhook
+
+    def deleteWebhook(self, webhook_id):
+        response = self.api.deleteWebhook(
+            **{"webhook_id": webhook_id}
+        )
+        print(response)
+
+        return response
 
     def getWebHooks(self):
         webhooks = self.api.getWebHooks()
@@ -38,10 +54,16 @@ class Command(BaseCommand):
         print(sub_list)
         return sub_list
 
+
+    def subscribeToUser(self):
+        response = self.api.subscribeToUser()
+        print(response)
+        return response
+
     def handle(self, *args, **options):
         action = options.get("action")
 
-        if action not in ["register", "list", "subscriptions"]:
+        if action not in ["register", "list", "subscriptions","delete", "subscribe"]:
             print(f"Unrecognized command '{action}'")
             return
 
@@ -51,8 +73,9 @@ class Command(BaseCommand):
             self.getWebHooks()
         elif action == "subscriptions":
             self.getSubscriptions()
+        elif action == "delete":
+            self.deleteWebhook(options.get("webhook_id"))
+        elif action == "subscribe":
+            self.subscribeToUser()
 
         return
-
-
-# python manage.py register_webhook https://sntwitter.softlever.com/api/activity

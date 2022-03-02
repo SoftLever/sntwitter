@@ -4,21 +4,12 @@ from rest_framework import status
 
 from user.models import Twitter
 
-import re
-
 from django.conf import settings
 
 # Interact with the twitter API
 import tweepy
 from twitter_client.management.commands.extended_tweepy import API
 
-# Webhook app verification
-import base64
-import hashlib
-import hmac
-
-
-# We'll use generic views becuase both endpoints need only a GET method
 
 class GetUrl(APIView):
     def get(self, request):
