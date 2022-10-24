@@ -5,8 +5,41 @@ from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework import status
 
 
-from user.models import Servicenow
-from api.serializers import ServicenowSerializer
+from user.models import Servicenow, CustomFields
+from api.serializers import ServicenowSerializer, CustomFieldSerializer
+
+
+class CustomFieldViewSet(viewsets.ModelViewSet):
+    queryset = CustomFields.objects.all()
+
+    def list(self, request):
+        queryset = CustomFields.objects.filter(user=request.user)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def create(self, request):
+        data = request.data
+        data["user"] = request.user.id
+        serializer = self.get_serializer(data=data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def destroy(self, request, pk=None):
+        sn = self.get_object()
+        sn.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def get_permissions(self):
+        permission_classes = [IsAuthenticated, IsAdminOrIsObjectOwner]
+        return [permission() for permission in permission_classes]
+
+
+    def get_serializer(self, *args, **kwargs):
+        return CustomFieldSerializer(*args, **kwargs)
 
 
 class ServicenowViewSet(viewsets.ModelViewSet):
@@ -26,7 +59,7 @@ class ServicenowViewSet(viewsets.ModelViewSet):
     def create(self, request):
         data = request.data
         if isinstance(data, list):
-            return Response({"message": "Can only add one instancer per user"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Can only add one instance per user"}, status=status.HTTP_400_BAD_REQUEST)
         else:
             # Non-admin users don't have to pass the user
             # attribute. Whether they do or don't, the value

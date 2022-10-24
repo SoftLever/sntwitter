@@ -102,3 +102,16 @@ class Twitter(models.Model):
 
     class Meta:
         db_table = "twitter"
+
+
+class CustomFields(models.Model):
+    field_name = models.CharField(max_length=100)
+    message = models.CharField(max_length=1000)
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.field_name
+
+    class Meta:
+        db_table = "custom_fields"

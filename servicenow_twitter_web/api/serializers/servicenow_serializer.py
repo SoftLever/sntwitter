@@ -1,5 +1,11 @@
 from rest_framework import serializers
-from user.models import Servicenow
+from user.models import Servicenow, CustomFields
+
+
+class CustomFieldSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomFields
+        fields = ['id', 'field_name', 'message', 'user']
 
 
 class ServicenowSerializer(serializers.ModelSerializer):

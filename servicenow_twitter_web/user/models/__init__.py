@@ -1,8 +1,9 @@
-from .user import User, Servicenow, Twitter
+from .user import User, Servicenow, Twitter, CustomFields
 
 
 __all__ = [
     'User',
     'Servicenow',
-    'Twitter'
+    'Twitter',
+    'CustomFields'
 ]
