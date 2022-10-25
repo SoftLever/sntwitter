@@ -3,13 +3,15 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     TwitterActivity, Events, ServicenowViewSet,
     GetUrl, Subscribe, Unsubscribe,
-    TwitterViewSet, CustomFieldViewSet
+    TwitterViewSet, CustomFieldViewSet,
+    TwittnowApiKeyViewSet
 )
 
 router = DefaultRouter()
 router.register(r'^servicenow-details', ServicenowViewSet, basename='servicenow-details')
 router.register(r'^twitter-details', TwitterViewSet, basename='twitter-details')
 router.register(r'^custom-fields', CustomFieldViewSet, basename='custom-fields')
+router.register(r'^api-key', TwittnowApiKeyViewSet, basename='api-key')
 
 urlpatterns = router.urls
 

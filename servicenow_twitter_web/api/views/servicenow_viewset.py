@@ -8,6 +8,26 @@ from rest_framework import status
 from user.models import Servicenow, CustomFields
 from api.serializers import ServicenowSerializer, CustomFieldSerializer
 
+from knox.models import AuthToken
+from rest_framework.authtoken.serializers import AuthTokenSerializer
+
+
+class TwittnowApiKeyViewSet(viewsets.ModelViewSet):
+    def create(self, request):
+        # This endpoint is used for both creation of new tokens and regeneration
+        # We'll start by deleting any existing non-expiring token for the requesting user
+        AuthToken.objects.filter(user=request.user, expiry=None,).delete()
+        # Then we'll create a new token with no expiry
+        token = AuthToken.objects.create(user=request.user, expiry=None)[1] # This token will never expire
+        return Response(token, status=status.HTTP_201_CREATED)
+
+    def get_permissions(self):
+        permission_classes = [IsAuthenticated, IsAdminOrIsObjectOwner]
+        return [permission() for permission in permission_classes]
+
+    def get_serializer(self, *args, **kwargs):
+        return TwittnowApiKeySerializer(*args, **kwargs)
+
 
 class CustomFieldViewSet(viewsets.ModelViewSet):
     queryset = CustomFields.objects.all()

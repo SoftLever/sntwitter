@@ -153,15 +153,20 @@ Required Permissions: Admin
 
 ## Create custom field
     
-    curl -X POST https://twittnow.softlever.com/custom-fields/ --header "Content-Type: application/json" --header "Authorization: Token 14da352fa342a30d5d8965e50076ea752acf0b73102dd08cd213bd068abc333a" --data '{"field_name": "City" , "message": "Which city do you live in?"}'
+    curl -X POST https://twittnow.softlever.com/custom-fields/ --header "Content-Type: application/json" --header "Authorization: Token 2bd5a71c9498e235958dd99914d7820f0603c2719bb907d0fe01de800f6faa12" --data '{"field_name": "City" , "message": "Which city do you live in?"}'
 
 ## Retrieve custom fields
 
     curl https://twittnow.softlever.com/custom-fields/ --header "Authorization: Token 14da352fa342a30d5d8965e50076ea752acf0b73102dd08cd213bd068abc333a"
 
-Delete custom field
+## Delete custom field
 
-curl -X DELETE https://twittnow.softlever.com/custom-fields/4/ --header "Content-Type: application/json" --header "Authorization: Token 5793121eb47d82ee44b6f79b7032dd11c21c3c5d6c1dad291fc01649a795f88c"
+    curl -X DELETE https://twittnow.softlever.com/custom-fields/4/ --header "Content-Type: application/json" --header "Authorization: Token 5793121eb47d82ee44b6f79b7032dd11c21c3c5d6c1dad291fc01649a795f88c"
+
+## Generate or Re-generate Twittnow developer token
+Call this endpoint to generate a new token or revoke an existing one and recreate. The request body has to be emtpy. Twittnow won't expose any endpoint to view existing token
+
+    curl -X POST https://twittnow.softlever.com/api-key/ --header "Content-Type: application/json" --header "Authorization: Token 2bd5a71c9498e235958dd99914d7820f0603c2719bb907d0fe01de800f6faa12"
 
 ## Other endpoints
 
@@ -176,7 +181,7 @@ CURL is purely for illustrative purposes. These API call will actually run from 
 
 ### Receive events from Twitter
 
-    https://example.com/api/activity/
+    https://twittnow.softlever.com/api/activity/
 
 This endpoint receives account activity events from Twitter, processes messages if the activity is either a direct message or mention, then sends the results to the relevant Servicenow instance.
 
