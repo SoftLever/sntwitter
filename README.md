@@ -7,9 +7,11 @@ The following flowchart shows how the program works at a basic level
 
 # INITIAL SETUP
 
-    python manage.py migrate
+    docker-compose exec web python manage.py migrate
 
-    python manage.py createsuperuser
+    docker-compose exec web python manage.py createsuperuser
+
+    docker-compose exec web python manage.py webhooks register --url https://twittnow.softlever.com
 
 
 ## Admin API Key

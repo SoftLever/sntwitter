@@ -16,7 +16,7 @@ class GetUrl(APIView):
         auth = tweepy.OAuthHandler(
             settings.API_KEY,
             settings.API_KEY_SECRET,
-            f"{settings.CALLBACK_URL}?user_id={request.user.id}"
+            callback=f"{settings.CALLBACK_URL}/?user_id={request.user.id}"
         )
 
         # Get redirect URL
@@ -39,9 +39,9 @@ class Subscribe(APIView):
             settings.API_KEY_SECRET
         )
 
-        auth_token = request.GET['oauth_token']
-        verifier = request.GET['oauth_verifier']
-        user = request.GET['user_id']
+        auth_token = request.GET.get('oauth_token')
+        verifier = request.GET.get('oauth_verifier')
+        user = request.GET.get('user_id')
 
         auth.request_token = {'oauth_token': auth_token, 'oauth_token_secret': verifier}
 
