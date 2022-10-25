@@ -18,8 +18,8 @@ DEBUG = int(os.environ.get("DEBUG", "0"))
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost").split(" ")
 
-CORS_ORIGIN_ALLOW_ALL = int(os.environ.get("CORS_ORIGIN_ALLOW_ALL", "0"))
-CORS_ALLOW_CREDENTIALS = int(os.environ.get("CORS_ALLOW_CREDENTIALS", "0"))
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_CREDENTIALS = True
 
 
 # Application definition
