@@ -39,7 +39,7 @@ class Events(APIView):
             return Response({"message": "No Twitter account. Add a twitter account from you dashboard to send messages"})
 
         # AUTHENTICATE TWITTER
-        auth = tweepy.OAuthHandler(settings.CONSUMER_KEY, settings.CONSUMER_SECRET)
+        auth = tweepy.OAuthHandler(settings.API_KEY, settings.API_KEY_SECRET)
         auth.set_access_token(keys.access_token, keys.access_token_secret)
         api = API(auth, wait_on_rate_limit=True)
 
@@ -62,7 +62,7 @@ class TwitterActivity(APIView):
     def get(self, request):
         # creates HMAC SHA-256 hash from incomming token and your consumer secret
         sha256_hash_digest = hmac.new(
-            key=bytes(settings.CONSUMER_SECRET, 'utf-8'),
+            key=bytes(settings.API_KEY_SECRET, 'utf-8'),
             msg=bytes(request.GET.get('crc_token'), 'utf-8'),
             digestmod=hashlib.sha256
         ).digest()

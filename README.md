@@ -11,7 +11,7 @@ The following flowchart shows how the program works at a basic level
 
     docker-compose exec web python manage.py createsuperuser
 
-    docker-compose exec web python manage.py webhooks register --url https://twittnow.softlever.com
+    docker-compose exec web python manage.py webhooks register --url https://twittnow.softlever.com/twitter-activity
 
 
 ## Admin API Key
@@ -150,7 +150,7 @@ Required Permissions: Admin
 
 ## Unsubscribe from the authenticated user's Twitter
 
-    curl -X DELETE https://twittnow.softlever.com/twitter-revoke/ --header "Authorization: Token f988a990271bc66171eafd7091d681aedeccce3a1f4b03f3644a532dc74e2ae9"
+    curl -X DELETE https://twittnow.softlever.com/twitter-revoke/ --header "Authorization: Token 5793121eb47d82ee44b6f79b7032dd11c21c3c5d6c1dad291fc01649a795f88c"
 
 
 ## Create custom field
