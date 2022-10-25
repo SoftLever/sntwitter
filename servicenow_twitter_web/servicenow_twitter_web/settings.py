@@ -141,11 +141,10 @@ STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
 # Twitter Dev Configs
-CONSUMER_KEY = os.environ.get("CONSUMER_KEY")
-CONSUMER_SECRET = os.environ.get("CONSUMER_SECRET")
+API_KEY = os.environ.get("API_KEY")
+API_KEY_SECRET = os.environ.get("API_KEY_SECRET")
 ACCESS_TOKEN = os.environ.get("ACCESS_TOKEN")
-ACCESS_SECRET = os.environ.get("ACCESS_SECRET")
+ACCESS_TOKEN_SECRET = os.environ.get("ACCESS_TOKEN_SECRET")
 CALLBACK_URL = os.environ.get("CALLBACK_URL", "http://127.0.0.1:8000/twitter-auth/")
 DEV_ENV = os.environ.get("DEV_ENV", "production")

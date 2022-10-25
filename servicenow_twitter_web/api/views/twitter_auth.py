@@ -14,8 +14,8 @@ from twitter_client.management.commands.extended_tweepy import API
 class GetUrl(APIView):
     def get(self, request):
         auth = tweepy.OAuthHandler(
-            settings.CONSUMER_KEY,
-            settings.CONSUMER_SECRET,
+            settings.API_KEY,
+            settings.API_KEY_SECRET,
             f"{settings.CALLBACK_URL}?user_id={request.user.id}"
         )
 
@@ -35,8 +35,8 @@ class Subscribe(APIView):
     def get(self, request):
         #print(authentication_classes)
         auth = tweepy.OAuthHandler(
-            settings.CONSUMER_KEY,
-            settings.CONSUMER_SECRET
+            settings.API_KEY,
+            settings.API_KEY_SECRET
         )
 
         auth_token = request.GET['oauth_token']
@@ -72,8 +72,8 @@ class Unsubscribe(APIView):
     def delete(self, request):
         twitter_instance = Twitter.objects.get(user=request.user)
         auth = tweepy.OAuth1UserHandler(
-            settings.CONSUMER_KEY,
-            settings.CONSUMER_SECRET,
+            settings.API_KEY,
+            settings.API_KEY_SECRET,
             twitter_instance.access_token,
             twitter_instance.access_token_secret
         )

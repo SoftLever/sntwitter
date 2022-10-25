@@ -10,15 +10,15 @@ class Command(BaseCommand):
 
     # API object with OAuth1
     auth = tweepy.OAuth1UserHandler(
-        settings.CONSUMER_KEY, settings.CONSUMER_SECRET,
-        settings.ACCESS_TOKEN, settings.ACCESS_SECRET
+        settings.API_KEY, settings.API_SECRET,
+        settings.ACCESS_TOKEN, settings.ACCESS_TOKEN_SECRET
     )
 
     api = API(auth, wait_on_rate_limit=True)
 
     # Application-only auth
     auth2 = tweepy.OAuth2AppHandler(
-        settings.CONSUMER_KEY, settings.CONSUMER_SECRET,
+        settings.API_KEY, settings.API_SECRET,
     )
 
     api2 = API(auth2, wait_on_rate_limit=True)

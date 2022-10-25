@@ -17,7 +17,7 @@ urlpatterns = router.urls
 
 urlpatterns += [
     re_path(r'^events', Events.as_view()),
-    re_path(r'^activity', TwitterActivity.as_view()),
+    re_path(r'^twitter-activity', TwitterActivity.as_view()),
     re_path(r'^get-auth-url', GetUrl.as_view()),
     re_path(r'^twitter-auth', Subscribe.as_view()),
     re_path(r'^twitter-revoke', Unsubscribe.as_view())
