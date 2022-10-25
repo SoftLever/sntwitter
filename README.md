@@ -164,7 +164,7 @@ Required Permissions: Admin
     curl -X DELETE https://twittnow.softlever.com/custom-fields/4/ --header "Content-Type: application/json" --header "Authorization: Token 5793121eb47d82ee44b6f79b7032dd11c21c3c5d6c1dad291fc01649a795f88c"
 
 ## Generate or Re-generate Twittnow developer token
-Call this endpoint to generate a new token or revoke an existing one and recreate. The request body has to be emtpy. Twittnow won't expose any endpoint to view existing token
+Call this endpoint to generate a new token or revoke an existing one and recreate. The request body has to be emtpy. Twittnow won't expose any endpoint to view the current token.
 
     curl -X POST https://twittnow.softlever.com/api-key/ --header "Content-Type: application/json" --header "Authorization: Token 2bd5a71c9498e235958dd99914d7820f0603c2719bb907d0fe01de800f6faa12"
 
