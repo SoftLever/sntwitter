@@ -10,6 +10,8 @@ from django.conf import settings
 import tweepy
 from twitter_client.management.commands.extended_tweepy import API
 
+from django.db import IntegrityError
+
 
 class GetUrl(APIView):
     def get(self, request):
@@ -33,7 +35,6 @@ class Subscribe(APIView):
     permission_classes = []
 
     def get(self, request):
-        #print(authentication_classes)
         auth = tweepy.OAuthHandler(
             settings.API_KEY,
             settings.API_KEY_SECRET
@@ -58,19 +59,27 @@ class Subscribe(APIView):
         user_details = API(auth, wait_on_rate_limit=True).verify_credentials()                
         auth_instance.userid = str(user_details.id)
         auth_instance.user_id = user
-        auth_instance.save()
+        auth_instance.handle = user_details.screen_name
+        auth_instance.profile_image = user_details.profile_image_url
+        try:
+            auth_instance.save()
+        except IntegrityError:
+            return Response({"message": "Subscription already exists for a separate account"}, status.HTTP_200_OK)
 
 
         # Subscribe to this user's activity
         subscription = API(auth, wait_on_rate_limit=True).subscribeToUser()
-        print(subscription)
 
         return Response({"message": "Subscribed to user"}, status.HTTP_200_OK)
 
 
 class Unsubscribe(APIView):
     def delete(self, request):
-        twitter_instance = Twitter.objects.get(user=request.user)
+        try:
+            twitter_instance = Twitter.objects.get(user=request.user)
+        except Twitter.DoesNotExist:
+            return Response({"message": "No Twitter integration found"}, status.HTTP_404_NOT_FOUND)
+
         auth = tweepy.OAuth1UserHandler(
             settings.API_KEY,
             settings.API_KEY_SECRET,
@@ -78,4 +87,5 @@ class Unsubscribe(APIView):
             twitter_instance.access_token_secret
         )
         unsub = API(auth, wait_on_rate_limit=True).deleteSubscription()
-        return response({"message": "Unsubscribed"}, status.HTTP_204_NO_CONTENT)
+        twitter_instance.delete() # Delete Twitter records
+        return Response({"message": "Unsubscribed"}, status.HTTP_204_NO_CONTENT)

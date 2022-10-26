@@ -40,7 +40,7 @@ Required Permissions: Admin
     curl -X POST https://twittnow.softlever.com/auth/login/ --data '{"username": "customer@example.com" ,"password":"password"}' --header "Content-Type: application/json"
 
 
-The generated token will expire in 30 days.
+The generated token will expire in 24 hours.
 
 
 ## Get a single user (Retrieve)
@@ -105,30 +105,23 @@ Required Permissions: Admin
 If you receive this error; `{"user":["This field must be unique."]}` it means the specified user already has a Servicenow record.
 
 
-## Listing Servicenow details
-
-Required Permissions: Admin
-
-    curl https://twittnow.softlever.com/servicenow-details/ --header "Content-Type: application/json" --header "Authorization: Token f988a990271bc66171eafd7091d681aedeccce3a1f4b03f3644a532dc74e2ae9"
-
-
-## Get details for a single Servicenow record
+## Get Servicenow details
 
 Required Permissions: Self or Admin
 
-    curl https://twittnow.softlever.com/servicenow-details/2/ --header "Content-Type: application/json" --header "Authorization: Token f988a990271bc66171eafd7091d681aedeccce3a1f4b03f3644a532dc74e2ae9"
+    curl https://twittnow.softlever.com/servicenow-details/2/ --header "Content-Type: application/json" --header "Authorization: Token 08f4be707cc895fc3c882406d3472fc2a1d843e49ac38ca4e92dbfcfda1a8a82"
 
 
 ## Updating Servicenow details partially
 
-    curl -X PATCH https://twittnow.softlever.com/servicenow-details/2/ --header "Content-Type: application/json" --header "Authorization: Token f988a990271bc66171eafd7091d681aedeccce3a1f4b03f3644a532dc74e2ae9" --data '{"admin_user": "Twitter", "admin_password": "Y7Ifer3"}'
+    curl -X PATCH https://twittnow.softlever.com/servicenow-details/2/ --header "Content-Type: application/json" --header "Authorization: Token 08f4be707cc895fc3c882406d3472fc2a1d843e49ac38ca4e92dbfcfda1a8a82" --data '{"admin_user": "Twitter", "admin_password": "Y7Ifer3"}'
 
 
 ## Delete Servicenow details for a user
 
 Required Permissions: Self or Admin
 
-    curl -X DELETE https://twittnow.softlever.com/servicenow-details/3/ --header "Content-Type: application/json" --header "Authorization: Token f988a990271bc66171eafd7091d681aedeccce3a1f4b03f3644a532dc74e2ae9"
+    curl -X DELETE https://twittnow.softlever.com/servicenow-details/3/ --header "Content-Type: application/json" --header "Authorization: Token 08f4be707cc895fc3c882406d3472fc2a1d843e49ac38ca4e92dbfcfda1a8a82"
 
 
 ## Getting a twitter authentication URL
@@ -186,4 +179,20 @@ CURL is purely for illustrative purposes. These API call will actually run from 
     https://twittnow.softlever.com/activity/
 
 This endpoint receives account activity events from Twitter, processes messages if the activity is either a direct message or mention, then sends the results to the relevant Servicenow instance.
+
+#### Test Request
+    
+    curl -X POST https://twittnow.softlever.com/twitter-activity/ --header "Content-Type: application/json" --header "Authorization: Token 2bd5a71c9498e235958dd99914d7820f0603c2719bb907d0fe01de800f6faa12" --data '{"for_user_id": "1084028173082419200" , "first_name": "Tony", "last_name": "Stark", "company_name":"Stark Industries", "password": "password"}'
+
+
+# Maintainance
+
+## List Current Webhook(s)
+
+    docker-compose exec web python manage.py webhooks list
+
+
+## Remove account activity subscription
+
+    docker-compose exec web python manage.py webhooks delete --webhook_id 1511363629576298506
 

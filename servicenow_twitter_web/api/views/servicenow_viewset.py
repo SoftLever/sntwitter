@@ -63,18 +63,17 @@ class CustomFieldViewSet(viewsets.ModelViewSet):
 
 
 class ServicenowViewSet(viewsets.ModelViewSet):
-
     queryset = Servicenow.objects.all()
 
     def list(self, request):
-        serializer = self.get_serializer(self.queryset, many=True)
-        return Response(serializer.data)
+        try:
+            queryset = Servicenow.objects.get(user=request.user)
+        except Servicenow.DoesNotExist:
+            return Response({"message": "No Servicenow record found"}, status=status.HTTP_404_NOT_FOUND)
 
-    def retrieve(self, request, pk=None):
-        sn = self.get_object()
-        serializer = self.get_serializer(sn)
+        serializer = self.get_serializer(queryset)
 
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def create(self, request):
         data = request.data
@@ -91,7 +90,7 @@ class ServicenowViewSet(viewsets.ModelViewSet):
 
             if serializer.is_valid():
                 serializer.save()
-                return Response(status=status.HTTP_201_CREATED)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -99,13 +98,15 @@ class ServicenowViewSet(viewsets.ModelViewSet):
         sn = self.get_object()
         data = request.data
 
-        # Disallow updating of the user associated with the record
-        data.pop("user")
+        # Security - Disallow updating of the user associated with the record
+        if data.get("user"):
+            data.pop("user")
+
         serializer = self.get_serializer(sn, data=data, partial=True)
 
         if serializer.is_valid():
             serializer.save()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -115,10 +116,7 @@ class ServicenowViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_permissions(self):
-        if self.action in ['list']:
-            permission_classes = [IsAdminUser]
-        else:
-            permission_classes = [IsAuthenticated, IsAdminOrIsObjectOwner]
+        permission_classes = [IsAuthenticated, IsAdminOrIsObjectOwner]
         return [permission() for permission in permission_classes]
 
     def get_serializer(self, *args, **kwargs):

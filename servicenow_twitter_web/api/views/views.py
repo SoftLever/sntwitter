@@ -82,7 +82,7 @@ class TwitterActivity(APIView):
         for_user_id = data.get("for_user_id")
 
         try:
-            keys = Twitter.objects.get(userid=for_user_id).prefetch_related("user")
+            keys = Twitter.objects.get(userid=for_user_id)
             userid = keys.userid
             sys_user = keys.user
         except ObjectDoesNotExist:

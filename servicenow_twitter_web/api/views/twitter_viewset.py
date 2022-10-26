@@ -10,24 +10,17 @@ from api.serializers import TwitterSerializer
 
 
 class TwitterViewSet(viewsets.ModelViewSet):
-
-    queryset = Twitter.objects.all()
-
     def list(self, request):
-        serializer = self.get_serializer(self.queryset, many=True)
-        return Response(serializer.data)
+        try:
+            queryset = Twitter.objects.get(user=request.user)
+            serializer = self.get_serializer(self.queryset)
+        except Twitter.DoesNotExist:
+            return Response({"message": "No Twitter integration record found"}, status.HTTP_404_NOT_FOUND)
 
-    def retrieve(self, request, pk=None):
-        sn = self.get_object()
-        serializer = self.get_serializer(sn)
-
-        return Response(serializer.data)
+        return Response(serializer.data, status.HTTP_200_OK)
 
     def get_permissions(self):
-        if self.action in ['list']:
-            permission_classes = [IsAdminUser]
-        else:
-            permission_classes = [IsAuthenticated, IsAdminOrIsObjectOwner]
+        permission_classes = [IsAuthenticated, IsAdminOrIsObjectOwner]
         return [permission() for permission in permission_classes]
 
     def get_serializer(self, *args, **kwargs):
