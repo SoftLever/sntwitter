@@ -212,12 +212,15 @@ def createNewUser(sn, customer_username, sys_user):
 
 class Events(APIView):
     def post(self, request):
+        user = request.user
         message = request.POST.get("message")
         target = request.POST.get("target")
 
+        print(f"Received request from {user}\nMessage: {message}\nTarget: {target}")
+
         # Get the authenticated user's Twitter access tokens
         try:
-            keys = Twitter.objects.get(user=request.user)
+            keys = Twitter.objects.get(user=user)
         except ObjectDoesNotExist:
             return Response({"message": "No Twitter account. Add a twitter account from you dashboard to send messages"})
 
