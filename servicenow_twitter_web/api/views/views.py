@@ -135,8 +135,7 @@ def updateCase(case, sn, customer_details, message, send_as_admin):
     return case
 
 
-def createNewUser(sn, sender, sys_user):
-    customer_username = sender
+def createNewUser(sn, customer_username, sys_user):
     # Create a user on Servicenow
     sn_customer_user = requests.post(
         f"{sn.instance_url}/api/now/table/sys_user",
@@ -204,6 +203,9 @@ def createNewUser(sn, sender, sys_user):
         except Exception as e:
             print(e) # Send to log file instead
             return None
+    else:
+        print(f"{sn_customer_user.status_code}: Failed to create user")
+        return
 
     return customer_details
 
