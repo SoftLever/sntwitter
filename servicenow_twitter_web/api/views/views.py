@@ -214,7 +214,11 @@ class Events(APIView):
     def post(self, request):
         user = request.user
         message = request.POST.get("message")
-        target = request.POST.get("target")
+
+        try:
+            target = Customer.objects.get(servicenow_sys_id=request.POST.get("target"))
+        except Customer.DoesNotExist:
+            return Response({"message": f"No associated customer was found"})
 
         print(f"Received request from {user}\nMessage: {message}\nTarget: {target}")
 
