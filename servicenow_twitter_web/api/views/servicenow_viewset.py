@@ -11,6 +11,8 @@ from api.serializers import ServicenowSerializer, CustomFieldSerializer
 from knox.models import AuthToken
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 
+import re
+
 
 class TwittnowApiKeyViewSet(viewsets.ModelViewSet):
     def create(self, request):
@@ -39,6 +41,7 @@ class CustomFieldViewSet(viewsets.ModelViewSet):
 
     def create(self, request):
         data = request.data
+        data["field_name_stripped"] = (re.sub('[^0-9a-zA-Z]+', '', data.get("field_name"))).lower()
         data["user"] = request.user.id
         serializer = self.get_serializer(data=data)
 

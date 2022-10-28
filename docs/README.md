@@ -95,5 +95,5 @@ If you receive this error; `{"user":["This field must be unique."]}` it means th
 ## Generate or Re-generate Twittnow developer token
 Call this endpoint to generate a new token or revoke an existing one and recreate. The request body has to be emtpy. Twittnow won't expose any endpoint to view the current token.
 
-    curl -X POST https://twittnow.softlever.com/api-key/ --header "Content-Type: application/json" --header "Authorization: Token 08f4be707cc895fc3c882406d3472fc2a1d843e49ac38ca4e92dbfcfda1a8a82"
+    curl -X POST https://twittnow.softlever.com/api-key/ --header "Content-Type: application/json" --header "Authorization: Token 546c2b66c59ce28e56f9f7c37abe426c04802028956920199c25e1babfc08fa7"
 

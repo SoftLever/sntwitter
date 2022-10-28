@@ -26,6 +26,176 @@ import json
 
 import tweepy
 
+from password_generator import PasswordGenerator
+
+from api.models import Customer
+
+from user.models import CustomFields
+
+import re
+
+
+def validateCutomFields(sys_user, customer_details, message):
+    # Retrieve all Twittnow user custom fields
+    custom_fields = CustomFields.objects.filter(user=sys_user)
+
+    # Check if customer has entered all required custom fields
+    customer_custom_fields = customer_details.custom_fields
+
+    # We need a few things from you before we raise a ticket. Enter the in this order;
+
+    message = "نحتاج منك بعض الأشياء قبل أن نرفع تذكرة. أدخل في هذا الترتيب ؛\n"
+    
+    for x in custom_fields:
+        # if the field is empty send a message and return None
+        # None indicates that not all custom fields had been entered
+        if not customer_custom_fields.get(x.field_name_stripped):
+            message = f"{message}\n{(x.message)}"
+            # customer_custom_fields.custom_fields[x.field_name_stripped] = message
+            # customer_custom_fields.save()
+            # Send the message to Twitter
+    return message
+
+    # return None # If this is returned, it means all fields have been filled
+
+
+def getCustomerDetails(sn, sys_user, sender):
+    # Check if the sender is already the recepient's customer in our database
+    try:
+        customer_details = Customer.objects.get(user=sys_user, servicenow_username=sender)
+    except Customer.DoesNotExist:
+        customer_details = createNewUser(sn, sender, sys_user)
+
+    return customer_details
+
+
+def getCase(sn, customer_details):
+    response = requests.get(
+        f"{sn.instance_url}/api/sn_customerservice/case",
+        params={
+            "sysparm_query": f"sys_created_by={customer_details.servicenow_sys_id}^active=1"
+        },
+        auth=(customer_details.servicenow_username, customer_details.servicenow_password),
+    )
+
+    case = response.json().get("result")
+
+    return case
+
+
+def createCase(sn, customer_details, message, send_as_admin):
+    if send_as_admin:
+        servicenow_credentials = (sn.admin_user, sn.admin_password)
+    else:
+        servicenow_credentials = (customer_details.servicenow_username, customer_details.servicenow_password)
+
+    case_response = requests.post(
+        f"{sn.instance_url}/api/sn_customerservice/case",
+        auth=servicenow_credentials,
+        data=json.dumps(
+            {
+                "contact_type": "social",
+                "short_description": message,
+            }
+        )
+    )
+
+    case = case_response.json()
+
+    return case
+
+
+def updateCase(case, sn, customer_details, message, send_as_admin):
+    if send_as_admin:
+        servicenow_credentials = (sn.admin_user, sn.admin_password)
+    else:
+        servicenow_credentials = (customer_details.servicenow_username, customer_details.servicenow_password)
+
+    case_response = requests.put(
+        f"{sn.instance_url}/api/sn_customerservice/case/{case}",
+        auth=servicenow_credentials,
+        params={
+            "sysparm_input_display_value": "true"
+        },
+        data=json.dumps(
+            {
+                "comments": message,
+            }
+        )
+    )
+
+    case = case_response.json().get("result")
+
+    return case
+
+
+def createNewUser(sn, sender, sys_user):
+    customer_username = sender
+    # Create a user on Servicenow
+    sn_customer_user = requests.post(
+        f"{sn.instance_url}/api/now/table/sys_user",
+        auth=(sn.admin_user, sn.admin_password),
+        data=json.dumps(
+            {
+                "user_name": customer_username,
+            }
+        )
+    )
+
+    # Get the returned sys_id
+    sys_id = sn_customer_user.json().get("result").get("sys_id")
+
+    # Create a password for the user
+    pwo = PasswordGenerator()
+    customer_password = pwo.generate()
+
+    requests.put(
+        f"{sn.instance_url}/api/now/table/sys_user/{sys_id}",
+        auth=(sn.admin_user, sn.admin_password),
+        params={
+            "sysparm_input_display_value": "true"
+        },
+        data=json.dumps(
+            {
+                "user_password": customer_password,
+            }
+        )
+    )
+
+    # Get the required role
+    role_object = requests.get(
+        f"{sn.instance_url}/api/now/table/sys_user_role",
+        params={
+            "sysparm_fields": "sys_id",
+            "name":"csm_ws_integration"
+        },
+        auth=(sn.admin_user, sn.admin_password)
+    )
+
+    role = role_object.json().get("result")[0].get("sys_id")
+
+    # Assign the user the role
+    role_response = requests.post(
+        f"{sn.instance_url}/api/now/table/sys_user_has_role",
+        auth=(sn.admin_user, sn.admin_password),
+        data=json.dumps(
+            {
+                "user": sys_id,
+                "role": role,
+            }
+        )
+    )
+
+    # Keep records in our DB
+    customer_details = Customer.objects.create(
+        servicenow_sys_id=sys_id,
+        servicenow_username=sender,
+        servicenow_password=customer_password,
+        user=sys_user
+    )
+
+    return customer_details
+
 
 class Events(APIView):
     def post(self, request):
@@ -89,7 +259,7 @@ class TwitterActivity(APIView):
             return Response({"message": "the user with this twitter account does not exist"})
 
 
-        # Get Servicenow credentials
+        # Get Servicenow admin credentials
         try:
             sn = Servicenow.objects.get(user=sys_user)
         except ObjectDoesNotExist:
@@ -108,26 +278,7 @@ class TwitterActivity(APIView):
 
                     message = message_create.get("message_data").get("text")
 
-                    attachment = message_create.get("message_data", {}).get("attachment", {}).get("media", {}).get("media_url", "")
-
-                    # if target == userid:
-                    #     {"is_admin":"0"}
-                    # else:
-                    #     {"is_admin":"0"}
-
-                    twitter_username = f"{user.get('name')} ({user.get('screen_name')})"
-
-                    response = requests.post(
-                        f"{sn.instance_url}/api/x_745589_sntwitter/create_or_update_case",
-                        auth=(sn.admin_user, sn.admin_password),
-                        data=json.dumps(
-                            {
-                                "message": message,
-                                "twitter_user_id": twitter_user_id,
-                                "twitter_username": twitter_username
-                            }
-                        )
-                    )
+                    attachment = message_create.get("message_data", {}).get("attachment", {}).get("media", {}).get("media_url", "")                        
 
         # HANDLE MENTIONS
         # We know it's a mention if it has the 'user_has_blocked' attribute
@@ -140,17 +291,35 @@ class TwitterActivity(APIView):
 
                 attachment = None
 
-                response = requests.post(
-                    f"{sn.instance_url}/api/x_745589_sntwitter/create_or_update_case",
-                    auth=(sn.admin_user, sn.admin_password),
-                    data=json.dumps(
-                        {
-                            "message": message,
-                            "twitter_user_id": sender,
-                            "twitter_username": twitter_username
-                        }
-                    )
-                )
+
+        # Get customer details
+        customer_details = getCustomerDetails(sn, sys_user, sender)
+
+        if target == userid:
+            send_as_admin = False
+        else:
+            send_as_admin = True
+
+        # Check if an open case exists for this customer
+        case = getCase(sn, customer_details)
+        print(case)
+
+        if case:
+            print("Updating case")
+            updated_case = updateCase(case[0].get("sys_id"), sn, customer_details, message, send_as_admin)
+            print(updated_case)
+        else:
+            # Validate custom fields -> The function returns none if all fields
+            # have been filled. So if it returns none, we will create the case
+            # print("Validating custom fields")
+            # validate_fields = validateCutomFields(sys_user, customer_details, message)
+
+            # if validate_fields:
+            #    return Response({"message": "Received data. Collecting custom fields"}, status.HTTP_200_OK)
+            
+            print("Creating new case")
+            new_case = createCase(sn, customer_details, message, send_as_admin)
+            print(new_case)
 
 
         return Response({"message": "received data"}, status.HTTP_200_OK)

@@ -105,6 +105,7 @@ class Twitter(models.Model):
 
 
 class CustomFields(models.Model):
+    field_name_stripped = models.CharField(max_length=100)
     field_name = models.CharField(max_length=100)
     message = models.CharField(max_length=1000)
 

@@ -5,7 +5,7 @@ from user.models import Servicenow, CustomFields
 class CustomFieldSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomFields
-        fields = ['id', 'field_name', 'message', 'user']
+        fields = ['id', 'field_name', 'field_name_stripped', 'message', 'user']
 
 
 class ServicenowSerializer(serializers.ModelSerializer):
