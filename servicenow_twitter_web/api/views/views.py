@@ -147,7 +147,7 @@ def createNewUser(sn, customer_username, sys_user):
         )
     )
 
-    if sn_customer_user.status_code == 200:
+    if sn_customer_user.status_code == 201:
         try:
             # Get the returned sys_id
             sys_id = sn_customer_user.json().get("result").get("sys_id")
