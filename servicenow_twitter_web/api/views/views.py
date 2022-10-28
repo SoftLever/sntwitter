@@ -260,9 +260,11 @@ class TwitterActivity(APIView):
 
     def post(self, request):
         data = request.data
+        print(data)
 
         # Find the user details associated with activity
         for_user_id = data.get("for_user_id")
+        print(for_user_id)
 
         try:
             keys = Twitter.objects.get(userid=for_user_id)
