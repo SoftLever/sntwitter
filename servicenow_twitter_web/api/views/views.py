@@ -216,7 +216,7 @@ class Events(APIView):
         message = request.POST.get("message")
 
         try:
-            target = Customer.objects.get(servicenow_sys_id=request.POST.get("target"))
+            target = Customer.objects.get(servicenow_sys_id=request.POST.get("target")).servicenow_username
         except Customer.DoesNotExist:
             return Response({"message": f"No associated customer was found"})
 
