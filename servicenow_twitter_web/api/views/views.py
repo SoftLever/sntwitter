@@ -295,7 +295,7 @@ class TwitterActivity(APIView):
                     message_create = event.get("message_create")
                     print("Getting Direct message target and sender")
                     sender = message_create.get("sender_id")
-                    target = message_create.get("target").get("recepient_id")
+                    target = message_create.get("target").get("recipient_id")
                     print(f"{sender} -> {target}")
 
                     message = message_create.get("message_data").get("text")
