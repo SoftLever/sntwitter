@@ -60,10 +60,12 @@ def validateCutomFields(sys_user, customer_details, message):
 
 
 def getCustomerDetails(sn, sys_user, sender):
+    print("Getting customer details")
     # Check if the sender is already the recepient's customer in our database
     try:
         customer_details = Customer.objects.get(user=sys_user, servicenow_username=sender)
     except Customer.DoesNotExist:
+        print("No customer account found. Creating...")
         customer_details = createNewUser(sn, sender, sys_user)
 
     return customer_details
@@ -71,10 +73,7 @@ def getCustomerDetails(sn, sys_user, sender):
 
 def getCase(sn, customer_details):
     response = requests.get(
-        f"{sn.instance_url}/api/sn_customerservice/case",
-        params={
-            "sysparm_query": f"sys_created_by={customer_details.servicenow_sys_id}^active=1"
-        },
+        f"{sn.instance_url}/api/sn_customerservice/case?sys_created_by={customer_details.servicenow_sys_id}^active=1",
         auth=(customer_details.servicenow_username, customer_details.servicenow_password),
     )
 
@@ -85,8 +84,10 @@ def getCase(sn, customer_details):
 
 def createCase(sn, customer_details, message, send_as_admin):
     if send_as_admin:
+        print("Calling SNOW instance as admin")
         servicenow_credentials = (sn.admin_user, sn.admin_password)
     else:
+        print("Calling SNOW instance as customer user")
         servicenow_credentials = (customer_details.servicenow_username, customer_details.servicenow_password)
 
     case_response = requests.post(
@@ -142,57 +143,62 @@ def createNewUser(sn, sender, sys_user):
         )
     )
 
-    # Get the returned sys_id
-    sys_id = sn_customer_user.json().get("result").get("sys_id")
+    if sn_customer_user.status_code == 200:
+        try:
+            # Get the returned sys_id
+            sys_id = sn_customer_user.json().get("result").get("sys_id")
 
-    # Create a password for the user
-    pwo = PasswordGenerator()
-    customer_password = pwo.generate()
+            # Create a password for the user
+            pwo = PasswordGenerator()
+            customer_password = pwo.generate()
 
-    requests.put(
-        f"{sn.instance_url}/api/now/table/sys_user/{sys_id}",
-        auth=(sn.admin_user, sn.admin_password),
-        params={
-            "sysparm_input_display_value": "true"
-        },
-        data=json.dumps(
-            {
-                "user_password": customer_password,
-            }
-        )
-    )
+            requests.put(
+                f"{sn.instance_url}/api/now/table/sys_user/{sys_id}",
+                auth=(sn.admin_user, sn.admin_password),
+                params={
+                    "sysparm_input_display_value": "true"
+                },
+                data=json.dumps(
+                    {
+                        "user_password": customer_password,
+                    }
+                )
+            )
 
-    # Get the required role
-    role_object = requests.get(
-        f"{sn.instance_url}/api/now/table/sys_user_role",
-        params={
-            "sysparm_fields": "sys_id",
-            "name":"csm_ws_integration"
-        },
-        auth=(sn.admin_user, sn.admin_password)
-    )
+            # Get the required role
+            role_object = requests.get(
+                f"{sn.instance_url}/api/now/table/sys_user_role",
+                params={
+                    "sysparm_fields": "sys_id",
+                    "name":"csm_ws_integration"
+                },
+                auth=(sn.admin_user, sn.admin_password)
+            )
 
-    role = role_object.json().get("result")[0].get("sys_id")
+            role = role_object.json().get("result")[0].get("sys_id")
 
-    # Assign the user the role
-    role_response = requests.post(
-        f"{sn.instance_url}/api/now/table/sys_user_has_role",
-        auth=(sn.admin_user, sn.admin_password),
-        data=json.dumps(
-            {
-                "user": sys_id,
-                "role": role,
-            }
-        )
-    )
+            # Assign the user the role
+            role_response = requests.post(
+                f"{sn.instance_url}/api/now/table/sys_user_has_role",
+                auth=(sn.admin_user, sn.admin_password),
+                data=json.dumps(
+                    {
+                        "user": sys_id,
+                        "role": role,
+                    }
+                )
+            )
 
-    # Keep records in our DB
-    customer_details = Customer.objects.create(
-        servicenow_sys_id=sys_id,
-        servicenow_username=sender,
-        servicenow_password=customer_password,
-        user=sys_user
-    )
+            # Keep records in our DB
+            customer_details = Customer.objects.create(
+                servicenow_sys_id=sys_id,
+                servicenow_username=sender,
+                servicenow_password=customer_password,
+                user=sys_user
+            )
+        except Exception as e:
+            print(e) # Send to log file instead
+            return None
 
     return customer_details
 
@@ -278,8 +284,8 @@ class TwitterActivity(APIView):
                 if event.get("type") == "message_create":
                     message_create = event.get("message_create")
                     sender = message_create.get("sender_id")
-                    target = message_create.get("target").get("recipient_id")
-                    # Target should be equal twitter_id. This is how we know this is a received message
+                    target = message_create.get("target").get("recepient_id")
+                    # Target should be equal for_user_id. This is how we know this is a received message
 
                     message = message_create.get("message_data").get("text")
 
@@ -293,12 +299,19 @@ class TwitterActivity(APIView):
                 twitter_username = tweet.get("user").get("screen_name")
                 name = tweet.get("user").get("name")
                 sender = tweet.get("user").get("id")
+                target = for_user_id
 
                 attachment = None
 
 
         # Get customer details
+        if not sender:
+            return Response({"message": "Request ignored, not a mention or direct message."}, status.HTTP_200_OK)
+
         customer_details = getCustomerDetails(sn, sys_user, sender)
+
+        if not customer_details:
+            return Response({"message": "Failed to retrieve customer details or to create new customer account"}, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         if target == userid:
             send_as_admin = False
