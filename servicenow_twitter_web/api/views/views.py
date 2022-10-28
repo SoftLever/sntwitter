@@ -77,6 +77,11 @@ def getCase(sn, customer_details):
         auth=(customer_details.servicenow_username, customer_details.servicenow_password),
     )
 
+    if response.status_code == 401:
+        print("Customer user authentication failed. Possible reasons; Customer account deleted on Servicenow, Customer account credentials changed") # Send to logs instead
+        return None
+
+
     case = response.json().get("result")
 
     return case
@@ -275,6 +280,7 @@ class TwitterActivity(APIView):
         sender = None
         target = None
         message = None
+        send_as_admin = False
 
 
         # HANDLE DIRECT MESSAGES
@@ -312,6 +318,9 @@ class TwitterActivity(APIView):
 
         if not customer_details:
             return Response({"message": "Failed to retrieve customer details or to create new customer account"}, status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        print(target)
+        print(userid)
 
         if target == userid:
             send_as_admin = False
