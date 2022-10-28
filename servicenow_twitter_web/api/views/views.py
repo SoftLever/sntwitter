@@ -196,7 +196,7 @@ def createNewUser(sn, customer_username, sys_user):
             # Keep records in our DB
             customer_details = Customer.objects.create(
                 servicenow_sys_id=sys_id,
-                servicenow_username=sender,
+                servicenow_username=customer_username,
                 servicenow_password=customer_password,
                 user=sys_user
             )
