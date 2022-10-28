@@ -266,6 +266,11 @@ class TwitterActivity(APIView):
             return Response({"message": "User has no Servicenow record"})
 
 
+        sender = None
+        target = None
+        message = None
+
+
         # HANDLE DIRECT MESSAGES
         if data.get("direct_message_events"):
             # Get direct message events
