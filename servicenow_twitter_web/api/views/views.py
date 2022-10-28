@@ -59,14 +59,14 @@ def validateCutomFields(sys_user, customer_details, message):
     # return None # If this is returned, it means all fields have been filled
 
 
-def getCustomerDetails(sn, sys_user, sender):
+def getCustomerDetails(sn, sys_user, customer_username):
     print("Getting customer details")
     # Check if the sender is already the recepient's customer in our database
     try:
-        customer_details = Customer.objects.get(user=sys_user, servicenow_username=sender)
+        customer_details = Customer.objects.get(user=sys_user, servicenow_username=customer_username)
     except Customer.DoesNotExist:
         print("No customer account found. Creating...")
-        customer_details = createNewUser(sn, sender, sys_user)
+        customer_details = createNewUser(sn, customer_username, sys_user)
 
     return customer_details
 
@@ -278,7 +278,7 @@ class TwitterActivity(APIView):
 
 
         sender = None
-        target = None
+        target = for_user_id
         message = None
         send_as_admin = False
 
@@ -289,9 +289,10 @@ class TwitterActivity(APIView):
             for event in data.get("direct_message_events"):
                 if event.get("type") == "message_create":
                     message_create = event.get("message_create")
+                    print("Getting Direct message target and sender")
                     sender = message_create.get("sender_id")
                     target = message_create.get("target").get("recepient_id")
-                    # Target should be equal for_user_id. This is how we know this is a received message
+                    print(f"{sender} -> {target}")
 
                     message = message_create.get("message_data").get("text")
 
@@ -304,8 +305,9 @@ class TwitterActivity(APIView):
                 message = tweet.get("text")
                 twitter_username = tweet.get("user").get("screen_name")
                 name = tweet.get("user").get("name")
+                print("Getting mention sender")
                 sender = tweet.get("user").get("id")
-                target = for_user_id
+                print(sender)
 
                 attachment = None
 
@@ -314,18 +316,19 @@ class TwitterActivity(APIView):
         if not sender:
             return Response({"message": "Request ignored, not a mention or direct message."}, status.HTTP_200_OK)
 
-        customer_details = getCustomerDetails(sn, sys_user, sender)
+        if str(sender) == str(userid):
+            # We determine whether the message in being received by our user
+            # or being sent by from Twitter, by checking sender and userid for equality
+            send_as_admin = True
+            customer_username = target # If our user is the sender, then we want to create an account for the recepient (their client)
+        else:
+            customer_username = sender
+            send_as_admin = False
+
+        customer_details = getCustomerDetails(sn, sys_user, customer_username)
 
         if not customer_details:
             return Response({"message": "Failed to retrieve customer details or to create new customer account"}, status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        print(target)
-        print(userid)
-
-        if target == userid:
-            send_as_admin = False
-        else:
-            send_as_admin = True
 
         # Check if an open case exists for this customer
         case = getCase(sn, customer_details)
