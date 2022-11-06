@@ -4,7 +4,8 @@ from .views import (
     TwitterActivity, Events, ServicenowViewSet,
     GetUrl, Subscribe, Unsubscribe,
     TwitterViewSet, CustomFieldViewSet,
-    TwittnowApiKeyViewSet
+    TwittnowApiKeyViewSet,
+    DialogFlowFulfillment
 )
 
 router = DefaultRouter()
@@ -20,5 +21,6 @@ urlpatterns += [
     re_path(r'^twitter-activity', TwitterActivity.as_view()),
     re_path(r'^get-auth-url', GetUrl.as_view()),
     re_path(r'^twitter-auth', Subscribe.as_view()),
-    re_path(r'^twitter-revoke', Unsubscribe.as_view())
+    re_path(r'^twitter-revoke', Unsubscribe.as_view()),
+    re_path(r'^dialogflow', DialogFlowFulfillment.as_view())
 ]

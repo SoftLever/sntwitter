@@ -133,3 +133,5 @@ dmypy.json
 
 # Server Configurations
 nginx.conf
+
+google_credentials.json

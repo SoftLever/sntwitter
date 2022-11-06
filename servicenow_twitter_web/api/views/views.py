@@ -34,29 +34,69 @@ from user.models import CustomFields
 
 import re
 
+from google.protobuf.json_format import MessageToDict
 
-def validateCutomFields(sys_user, customer_details, message):
-    # Retrieve all Twittnow user custom fields
-    custom_fields = CustomFields.objects.filter(user=sys_user)
 
-    # Check if customer has entered all required custom fields
-    customer_custom_fields = customer_details.custom_fields
+def detect_intent_texts(project_id, session_id, text, language_code, keys, sender, customer_details):
+    """Returns the result of detect intent with texts as inputs.
 
-    # We need a few things from you before we raise a ticket. Enter the in this order;
+    Using the same `session_id` between requests allows continuation
+    of the conversation."""
+    from google.cloud import dialogflow_v2beta1 as dialogflow
 
-    message = "نحتاج منك بعض الأشياء قبل أن نرفع تذكرة. أدخل في هذا الترتيب ؛\n"
-    
-    for x in custom_fields:
-        # if the field is empty send a message and return None
-        # None indicates that not all custom fields had been entered
-        if not customer_custom_fields.get(x.field_name_stripped):
-            message = f"{message}\n{(x.message)}"
-            # customer_custom_fields.custom_fields[x.field_name_stripped] = message
-            # customer_custom_fields.save()
-            # Send the message to Twitter
-    return message
+    # query_params = dialogflow.QueryParameters(contexts=[{"name": "TwitterID"}])
 
-    # return None # If this is returned, it means all fields have been filled
+    session_client = dialogflow.SessionsClient()
+
+    session = session_client.session_path(project_id, session_id)
+    print("Session path: {}\n".format(session))
+
+    text_input = dialogflow.TextInput(text=text, language_code=language_code)
+
+    query_input = dialogflow.QueryInput(text=text_input)
+
+    response = session_client.detect_intent(
+        request={"session": session, "query_input": query_input, } # "query_params": query_params
+    )
+
+    response_json = MessageToDict(response._pb)
+
+    print("=" * 20)
+    print("Query text: {}".format(response_json.get("queryResult", {}).get("queryText")))
+    print(
+        "Detected intent: {} (confidence: {})\n".format(
+            response_json.get("queryResult").get("intent").get("displayName"),
+            response_json.get("queryResult").get("intentDetectionConfidence"),
+        )
+    )
+
+    fulfillment_text = response_json.get("queryResult").get("fulfillmentText")
+
+    print(f"Fulfillment text: {fulfillment_text}\n")
+
+    # AUTHENTICATE TWITTER
+    auth = tweepy.OAuthHandler(settings.API_KEY, settings.API_KEY_SECRET)
+    auth.set_access_token(keys.access_token, keys.access_token_secret)
+    api = API(auth, wait_on_rate_limit=True)
+    dm = api.send_direct_message(
+        recipient_id=sender,
+        text=fulfillment_text
+    )
+
+    parameters = response_json.get("queryResult", {}).get("parameters")
+
+    if response.query_result.all_required_params_present and parameters:
+        print("Saving collected information")
+        customer_name = parameters.get("GivenName", {}).get("name", "John Doe")
+        customer_details.first_name = customer_name.split(" ")[0]
+        customer_details.last_name = customer_name.split(" ")[-1]
+        customer_details.email = parameters.get("Email")
+        customer_details.phone_number = parameters.get("PhoneNumber")
+        customer_details.national_id = parameters.get("NationalID")
+        customer_details.save()
+        return None
+
+    return response.query_result
 
 
 def getCustomerDetails(sn, sys_user, customer_username):
@@ -73,7 +113,7 @@ def getCustomerDetails(sn, sys_user, customer_username):
 
 def getCase(sn, customer_details):
     response = requests.get(
-        f"{sn.instance_url}/api/sn_customerservice/case?sys_created_by={customer_details.servicenow_sys_id}^active=1",
+        f"{sn.instance_url}/api/sn_customerservice/case?sysparm_query=sys_created_by={customer_details.servicenow_sys_id}^active=1^contact_type=social",
         auth=(customer_details.servicenow_username, customer_details.servicenow_password),
     )
 
@@ -320,7 +360,6 @@ class TwitterActivity(APIView):
 
                 attachment = None
 
-
         # Get customer details
         if not sender:
             return Response({"message": "Request ignored, not a mention or direct message."}, status.HTTP_200_OK)
@@ -340,25 +379,33 @@ class TwitterActivity(APIView):
             return Response({"message": "Failed to retrieve customer details or to create new customer account"}, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Check if an open case exists for this customer
+        print("Checking if active case exists")
         case = getCase(sn, customer_details)
-        print(case)
 
         if case:
             print("Updating case")
             updated_case = updateCase(case[0].get("sys_id"), sn, customer_details, message, send_as_admin)
-            print(updated_case)
         else:
-            # Validate custom fields -> The function returns none if all fields
-            # have been filled. So if it returns none, we will create the case
-            # print("Validating custom fields")
-            # validate_fields = validateCutomFields(sys_user, customer_details, message)
+            # Check if all custom fields for this customer have been collected
+            # Also check if send_as_admin is True -> We don't want to generate responses for
+            # messages sent by the admin themselves.
+            if (not send_as_admin) and (not all(
+                [
+                    customer_details.first_name, customer_details.last_name,
+                    customer_details.phone_number, customer_details.email,
+                    customer_details.national_id
+                ]
+            )):
+                print("Some customer information is missing. Collecting...")
+                # If the function below returns None, then we
+                # know we've collected and saved all information
+                response = detect_intent_texts("twittnow-flym", sender, message, "en-US", keys, sender, customer_details)
 
-            # if validate_fields:
-            #    return Response({"message": "Received data. Collecting custom fields"}, status.HTTP_200_OK)
-            
+                if response:
+                    return Response({"message": "Awaiting more customer details"}, status.HTTP_200_OK)
+
             print("Creating new case")
             new_case = createCase(sn, customer_details, message, send_as_admin)
-            print(new_case)
 
 
         return Response({"message": "received data"}, status.HTTP_200_OK)

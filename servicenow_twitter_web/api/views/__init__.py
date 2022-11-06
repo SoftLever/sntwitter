@@ -2,6 +2,7 @@ from .servicenow_viewset import ServicenowViewSet, CustomFieldViewSet, TwittnowA
 from .twitter_viewset import TwitterViewSet
 from .views import Events, TwitterActivity
 from .twitter_auth import GetUrl, Subscribe, Unsubscribe
+from .dialogflow import DialogFlowFulfillment
 
 
 __all__ = [
@@ -13,5 +14,6 @@ __all__ = [
     'TwitterActivity',
     'GetUrl',
     'Subscribe',
-    'Unsubscribe'
+    'Unsubscribe',
+    'DialogFlowFulfillment'
 ]

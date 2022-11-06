@@ -11,7 +11,12 @@ class Customer(models.Model):
 	servicenow_password = models.CharField(max_length=100)
 
 	# Custom fields
-	custom_fields = models.JSONField(default=dict)
+	# custom_fields = models.JSONField(default=dict)
+	first_name = models.CharField(max_length=100, null=True)
+	last_name = models.CharField(max_length=100, null=True)
+	phone_number = models.CharField(max_length=100, null=True)
+	email = models.EmailField(null=True)
+	national_id = models.CharField(max_length=100, null=True)
 
 	user = models.ForeignKey(User, on_delete=models.CASCADE) # The user this customer is associated with
 
