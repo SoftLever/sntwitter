@@ -135,7 +135,7 @@ def createCase(sn, customer_details, message, send_as_admin):
         print("Calling SNOW instance as customer user")
         servicenow_credentials = (customer_details.servicenow_username, customer_details.servicenow_password)
 
-    message = f"Name: {customer_details.first_name} {customer_details.last_name}\nEmail: {customer_details.email}\nPhone: {customer_details.phone_number}\nNational ID: {customer_details.national_id}"
+    message = f"Customer Details;\n{"*" * 20}\nName: {customer_details.first_name} {customer_details.last_name}\nEmail: {customer_details.email}\nPhone: {customer_details.phone_number}\nNational ID: {customer_details.national_id}"
 
     case_response = requests.post(
         f"{sn.instance_url}/api/sn_customerservice/case",
@@ -403,12 +403,10 @@ class TwitterActivity(APIView):
                 print("Creating new case")
                 new_case = createCase(sn, customer_details, message, send_as_admin)
             else:
-                print("Some customer information is missing. Collecting...")
                 # Check if send_as_admin is True -> We don't want to generate responses for
                 # messages sent by the admin themselves. 
                 if not send_as_admin:
-                    # If the function below returns None, then we
-                    # know we've collected and saved all information
+                    print("Some customer information is missing. Collecting...")
                     detect_intent_texts("twittnow-flym", sender, message, "en-US", keys, sender, customer_details)
 
         return Response({"message": "received data"}, status.HTTP_200_OK)
