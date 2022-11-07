@@ -113,7 +113,7 @@ def getCustomerDetails(sn, sys_user, customer_username):
 
 def getCase(sn, customer_details):
     response = requests.get(
-        f"{sn.instance_url}/api/sn_customerservice/case?sysparm_query=sys_created_by={customer_details.servicenow_sys_id}^active=1^contact_type=social",
+        f"{sn.instance_url}/api/sn_customerservice/case?sysparm_query=sys_created_by={customer_details.servicenow_username}^active=1^contact_type=social",
         auth=(customer_details.servicenow_username, customer_details.servicenow_password),
     )
 
@@ -381,7 +381,6 @@ class TwitterActivity(APIView):
         # Check if an open case exists for this customer
         print("Checking if active case exists")
         case = getCase(sn, customer_details)
-        print(case)
 
         if case:
             print("Updating case")
