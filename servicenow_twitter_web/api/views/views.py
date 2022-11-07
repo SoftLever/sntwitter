@@ -404,8 +404,8 @@ class TwitterActivity(APIView):
                 if response:
                     return Response({"message": "Awaiting more customer details"}, status.HTTP_200_OK)
 
-            print("Creating new case")
-            new_case = createCase(sn, customer_details, message, send_as_admin)
+                print("Creating new case")
+                new_case = createCase(sn, customer_details, message, send_as_admin)
 
 
         return Response({"message": "received data"}, status.HTTP_200_OK)
