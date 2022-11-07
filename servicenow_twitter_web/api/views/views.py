@@ -381,6 +381,7 @@ class TwitterActivity(APIView):
         # Check if an open case exists for this customer
         print("Checking if active case exists")
         case = getCase(sn, customer_details)
+        print(case)
 
         if case:
             print("Updating case")
