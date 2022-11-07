@@ -135,7 +135,7 @@ def createCase(sn, customer_details, message, send_as_admin):
         print("Calling SNOW instance as customer user")
         servicenow_credentials = (customer_details.servicenow_username, customer_details.servicenow_password)
 
-    message = f"Customer Details;\n{"*" * 20}\nName: {customer_details.first_name} {customer_details.last_name}\nEmail: {customer_details.email}\nPhone: {customer_details.phone_number}\nNational ID: {customer_details.national_id}"
+    message = f"Customer Details;\n{'*' * 20}\nName: {customer_details.first_name} {customer_details.last_name}\nEmail: {customer_details.email}\nPhone: {customer_details.phone_number}\nNational ID: {customer_details.national_id}"
 
     case_response = requests.post(
         f"{sn.instance_url}/api/sn_customerservice/case",
