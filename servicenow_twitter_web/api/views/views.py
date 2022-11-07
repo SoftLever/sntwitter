@@ -386,6 +386,7 @@ class TwitterActivity(APIView):
             print("Updating case")
             updated_case = updateCase(case[0].get("sys_id"), sn, customer_details, message, send_as_admin)
         else:
+            print("No active case exists")
             # Check if all custom fields for this customer have been collected
             # Also check if send_as_admin is True -> We don't want to generate responses for
             # messages sent by the admin themselves.
