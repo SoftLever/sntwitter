@@ -36,33 +36,6 @@ import re
 
 from google.protobuf.json_format import MessageToDict
 
-from google.cloud import translate
-
-
-# For now the only required translation is English to 
-def translate_text(text=None, source_language_code="ar-sa", target_language_code="en", project_id="twittnow-flym"):
-
-    translated_text = None
-
-    client = translate.TranslationServiceClient()
-    location = "global"
-    parent = f"projects/{project_id}/locations/{location}"
-
-    response = client.translate_text(
-        request={
-            "parent": parent,
-            "contents": [text],
-            "mime_type": "text/plain",
-            "source_language_code": source_language_code,
-            "target_language_code": target_language_code,
-        }
-    )
-
-    if response.translations:
-        translated_text = response.translations[0].translated_text
-
-    return translated_text
-
 
 def detect_intent_texts(project_id, session_id, text, language_code, keys, sender, customer_details):
     """Returns the result of detect intent with texts as inputs.
@@ -77,12 +50,6 @@ def detect_intent_texts(project_id, session_id, text, language_code, keys, sende
 
     session = session_client.session_path(project_id, session_id)
     print("Session path: {}\n".format(session))
-
-    # If customer preferred language is currently set to Arabic, translate text
-    # to English before calling DialogFlow. We don't autodetect language to avoid
-    # overhead and the extra cost of calling 'detect'
-    if customer_details.language == "ar-sa":
-        text = translate_text(text)
 
     text_input = dialogflow.TextInput(text=text, language_code=language_code)
 
@@ -104,11 +71,6 @@ def detect_intent_texts(project_id, session_id, text, language_code, keys, sende
     )
 
     fulfillment_text = response_json.get("queryResult").get("fulfillmentText")
-
-    # If customer preferred language is currently set to Arabic, translate the
-    # response from Dialogflow to Arabic before sending the message to Twitter
-    if customer_details.language == "ar-sa":
-        fulfillment_text = translate_text(text, "en", "ar-sa")
 
     print(f"Fulfillment text: {fulfillment_text}\n")
 
