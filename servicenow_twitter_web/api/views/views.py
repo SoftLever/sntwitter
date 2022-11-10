@@ -153,7 +153,7 @@ def createCase(sn, customer_details, message, send_as_admin):
     return case
 
 
-def updateCase(case, sn, customer_details, message, send_as_admin):
+def updateCase(case, sn, customer_details, message, send_as_admin, field="comments"):
     if send_as_admin:
         print("Calling SNOW instance as admin")
         servicenow_credentials = (sn.admin_user, sn.admin_password)
@@ -169,7 +169,7 @@ def updateCase(case, sn, customer_details, message, send_as_admin):
         },
         data=json.dumps(
             {
-                "comments": message,
+                field: message,
             }
         )
     )
@@ -397,11 +397,14 @@ class TwitterActivity(APIView):
 
             # If we haven't returned at this point,
             # it means our description is empty, so
-            # we must prompt the customer for it first.
+            # So we will save this message as description
+            # -> Logically this will only happen once
+            updated_case = updateCase(case[0].get("sys_id"), sn, customer_details, message, send_as_admin, "description")
+
             if customer_details.language == "ar-sa":
-                prompt = "يرجى وصف المشكلة او الملاحظة"
+                text = f"لقد تم انشاء البلاغ رقم {case[0].get('number')} في نظام ادارة خدمة الشركاء"
             else:
-                prompt = "Please describe your issues"
+                text = f"Your Case {case[0].get('number')} has been registered with Partners Care System."
 
             if not send_as_admin:
                 # AUTHENTICATE TWITTER
@@ -410,7 +413,7 @@ class TwitterActivity(APIView):
                 api = API(auth, wait_on_rate_limit=True)
                 dm = api.send_direct_message(
                     recipient_id=sender,
-                    text=prompt
+                    text=text
                 )
         else:
             print("No active case exists")
