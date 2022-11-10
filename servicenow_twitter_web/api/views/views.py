@@ -36,6 +36,33 @@ import re
 
 from google.protobuf.json_format import MessageToDict
 
+from google.cloud import translate
+
+
+# For now the only required translation is English to 
+def translate_text(text=None, source_language_code="ar-sa", target_language_code="en", project_id="twittnow-flym"):
+
+    translated_text = None
+
+    client = translate.TranslationServiceClient()
+    location = "global"
+    parent = f"projects/{project_id}/locations/{location}"
+
+    response = client.translate_text(
+        request={
+            "parent": parent,
+            "contents": [text],
+            "mime_type": "text/plain",
+            "source_language_code": source_language_code,
+            "target_language_code": target_language_code,
+        }
+    )
+
+    if response.translations:
+        translated_text = response.translations[0].translated_text
+
+    return translated_text
+
 
 def detect_intent_texts(project_id, session_id, text, language_code, keys, sender, customer_details):
     """Returns the result of detect intent with texts as inputs.
@@ -50,6 +77,12 @@ def detect_intent_texts(project_id, session_id, text, language_code, keys, sende
 
     session = session_client.session_path(project_id, session_id)
     print("Session path: {}\n".format(session))
+
+    # If customer preferred language is currently set to Arabic, translate text
+    # to English before calling DialogFlow. We don't autodetect language to avoid
+    # overhead and the extra cost of calling 'detect'
+    if customer_details.language == "ar-sa":
+        text = translate_text(text)
 
     text_input = dialogflow.TextInput(text=text, language_code=language_code)
 
@@ -72,6 +105,11 @@ def detect_intent_texts(project_id, session_id, text, language_code, keys, sende
 
     fulfillment_text = response_json.get("queryResult").get("fulfillmentText")
 
+    # If customer preferred language is currently set to Arabic, translate the
+    # response from Dialogflow to Arabic before sending the message to Twitter
+    if customer_details.language == "ar-sa":
+        fulfillment_text = translate_text(text, "en", "ar-sa")
+
     print(f"Fulfillment text: {fulfillment_text}\n")
 
     # AUTHENTICATE TWITTER
@@ -87,9 +125,8 @@ def detect_intent_texts(project_id, session_id, text, language_code, keys, sende
 
     if response.query_result.all_required_params_present and parameters:
         print("Saving collected information")
-        customer_name = parameters.get("GivenName", {}).get("name", "John Doe")
-        customer_details.first_name = customer_name.split(" ")[0]
-        customer_details.last_name = customer_name.split(" ")[-1]
+        customer_details.first_name = parameters.get("FirstName", {}).get("name", "John")
+        customer_details.last_name = parameters.get("LastName", {}).get("name", "Doe")
         customer_details.email = parameters.get("Email")
         customer_details.phone_number = parameters.get("PhoneNumber")
         customer_details.national_id = parameters.get("NationalID")
@@ -388,8 +425,31 @@ class TwitterActivity(APIView):
         case = getCase(sn, customer_details)
 
         if case:
-            print("Updating case")
-            updated_case = updateCase(case[0].get("sys_id"), sn, customer_details, message, send_as_admin)
+            # If case has description, update it. Otherwise
+            # Query the user for a description (of their issue)
+            # Logically, this will only happen the first time
+            if case[0].get("description"):
+                print("Updating case")
+                updated_case = updateCase(case[0].get("sys_id"), sn, customer_details, message, send_as_admin)
+                return Response({"message": "Case updated"}, status.HTTP_200_OK)
+
+            # If we haven't returned at this point,
+            # it means our description is empty, so
+            # we must prompt the customer for it first.
+            if customer_details.language == "ar-sa":
+                prompt = "يرجى وصف المشكلة او الملاحظة"
+            else:
+                prompt = "Please describe your issues"
+
+            if not send_as_admin:
+                # AUTHENTICATE TWITTER
+                auth = tweepy.OAuthHandler(settings.API_KEY, settings.API_KEY_SECRET)
+                auth.set_access_token(keys.access_token, keys.access_token_secret)
+                api = API(auth, wait_on_rate_limit=True)
+                dm = api.send_direct_message(
+                    recipient_id=sender,
+                    text=prompt
+                )
         else:
             print("No active case exists")
             # Check if all custom fields for this customer have been collected

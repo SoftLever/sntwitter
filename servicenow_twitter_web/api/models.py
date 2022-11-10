@@ -18,6 +18,9 @@ class Customer(models.Model):
 	email = models.EmailField(null=True)
 	national_id = models.CharField(max_length=100, null=True)
 
+	language = models.CharField(max_length=10, choices=[('ar-sa', 'ar-sa'), ('en', 'en')], default="en") # ISO-639 language codes
+	# Language can be changed with every new interaction
+
 	user = models.ForeignKey(User, on_delete=models.CASCADE) # The user this customer is associated with
 
 	class Meta:
