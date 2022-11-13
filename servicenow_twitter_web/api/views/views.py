@@ -51,6 +51,10 @@ def detect_intent_texts(project_id, session_id, text, language_code, keys, sende
     session = session_client.session_path(project_id, session_id)
     print("Session path: {}\n".format(session))
 
+    # Since we're using a SW agent in place of an arabic one
+    if language_code == "ar-sa":
+        language_code = "sw"
+
     text_input = dialogflow.TextInput(text=text, language_code=language_code)
 
     query_input = dialogflow.QueryInput(text=text_input)
