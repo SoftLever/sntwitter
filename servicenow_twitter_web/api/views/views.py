@@ -440,6 +440,6 @@ class TwitterActivity(APIView):
                 # messages sent by the admin themselves. 
                 if not send_as_admin:
                     print("Some customer information is missing. Collecting...")
-                    detect_intent_texts("twittnow-flym", sender, message, "en-US", keys, sender, customer_details)
+                    detect_intent_texts("twittnow-flym", sender, message, customer_details.language, keys, sender, customer_details)
 
         return Response({"message": "received data"}, status.HTTP_200_OK)
