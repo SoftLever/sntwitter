@@ -334,6 +334,7 @@ class TwitterActivity(APIView):
         target = for_user_id
         message = None
         send_as_admin = False
+        quick_reply = None
 
 
         # HANDLE DIRECT MESSAGES
@@ -342,6 +343,7 @@ class TwitterActivity(APIView):
             for event in data.get("direct_message_events"):
                 if event.get("type") == "message_create":
                     message_create = event.get("message_create")
+                    quick_reply = message_create.get("message_data").get("quick_reply_response")
                     print("Getting Direct message target and sender")
                     sender = message_create.get("sender_id")
                     target = message_create.get("target").get("recipient_id")
@@ -378,6 +380,12 @@ class TwitterActivity(APIView):
             send_as_admin = False
 
         customer_details = getCustomerDetails(sn, sys_user, customer_username)
+
+        # Check if the message is a request to change language
+        if quick_reply:
+            customer_details.language = quick_reply.get("metadata")
+            customer_details.save()
+            return Response({"message": "Changed customer language"}, status.HTTP_200_OK)
 
         if not customer_details:
             return Response({"message": "Failed to retrieve customer details or to create new customer account"}, status.HTTP_500_INTERNAL_SERVER_ERROR)

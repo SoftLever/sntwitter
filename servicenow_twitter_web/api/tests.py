@@ -8,17 +8,20 @@ response = requests.post(
         "Content-Type": "application/json",
     },
     data=json.dumps({
-        "for_user_id": "1469625174244868097",
+        "for_user_id": "1084028173082419200",
         "direct_message_events": [
             {
                 "type": "message_create",
                 "message_create": {
-                    "sender_id":"1084028173082419200",
+                    "sender_id":"2829183065",
                     "target":{
-                        "recepient_id":"1469625174244868097"
+                        "recepient_id":"1084028173082419200"
                     },
                     "message_data": {
-                        "text": "What do you need from me?"
+                        "text": "English",
+                        "quick_reply_response": {
+                            "metadata": "ar-sa"
+                        }
                     }
                 }
             }
