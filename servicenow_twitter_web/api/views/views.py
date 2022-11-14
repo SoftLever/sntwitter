@@ -385,14 +385,14 @@ class TwitterActivity(APIView):
 
         customer_details = getCustomerDetails(sn, sys_user, customer_username)
 
+        if not customer_details:
+            return Response({"message": "Failed to retrieve customer details or to create new customer account"}, status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         # Check if the message is a request to change language
         if quick_reply:
             customer_details.language = quick_reply.get("metadata")
             customer_details.save()
             return Response({"message": "Changed customer language"}, status.HTTP_200_OK)
-
-        if not customer_details:
-            return Response({"message": "Failed to retrieve customer details or to create new customer account"}, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Check if an open case exists for this customer
         print("Checking if active case exists")
