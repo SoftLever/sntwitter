@@ -66,21 +66,27 @@ class API(API):
 
 
     def createWelcomeMessage(self, **kwargs):
+        options = kwargs.get("quick_reply_options")
+
+        data = {
+            "welcome_message" : {
+                "name": kwargs.get("name"),
+                "message_data": {
+                    "text": kwargs.get("text")
+                }
+              }
+        }
+
+        if options:
+            data["welcome_message"]["message_data"]["quick_reply"] = {
+                "type": "options",
+                "options": [json.loads(o) for o in options]
+            }
+
         return self.request2(
             "POST",
             "https://api.twitter.com/1.1/direct_messages/welcome_messages/new.json",
-            data=json.dumps({
-              "welcome_message" : {
-                "name": kwargs.get("name"),
-                "message_data": {
-                    "text": kwargs.get("text"),
-                    "quick_reply": {
-                    "type": "options",
-                    "options": [json.loads(o) for o in (kwargs.get("quick_reply_options"))]
-                    }
-                }
-              }
-            })
+            data=json.dumps(data)
         ).json()
 
     def listWelcomeMessages(self, **kwargs):

@@ -10,6 +10,10 @@ class Customer(models.Model):
 	servicenow_username = models.CharField(max_length=100) # will be equivalent to the customer's twitter ID
 	servicenow_password = models.CharField(max_length=100)
 
+	# Twitter Information
+	twitter_username = models.CharField(max_length=40, null=True)
+	twitter_name = models.CharField(max_length=100, null=True)
+
 	# Custom fields
 	# custom_fields = models.JSONField(default=dict)
 	first_name = models.CharField(max_length=100, null=True)

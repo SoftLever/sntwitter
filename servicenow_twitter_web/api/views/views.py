@@ -44,8 +44,6 @@ def detect_intent_texts(project_id, session_id, text, language_code, keys, sende
     of the conversation."""
     from google.cloud import dialogflow_v2beta1 as dialogflow
 
-    # query_params = dialogflow.QueryParameters(contexts=[{"name": "TwitterID"}])
-
     session_client = dialogflow.SessionsClient()
 
     session = session_client.session_path(project_id, session_id)
@@ -54,6 +52,12 @@ def detect_intent_texts(project_id, session_id, text, language_code, keys, sende
     # Since we're using a SW agent in place of an arabic one
     if language_code == "ar-sa":
         language_code = "sw"
+
+    # Append tnow to text -> We are using a single intent with only one phrase
+    # The only training phrase for this intent is "tnow", so appending it to our
+    # texts will trigger it
+
+    text = f"{text} tnow"
 
     text_input = dialogflow.TextInput(text=text, language_code=language_code)
 
@@ -102,14 +106,17 @@ def detect_intent_texts(project_id, session_id, text, language_code, keys, sende
     return response.query_result
 
 
-def getCustomerDetails(sn, sys_user, customer_username):
+def getCustomerDetails(sn, sys_user, customer_twitter_id, customer_twitter_username, customer_twitter_name, api):
     print("Getting customer details")
     # Check if the sender is already the recepient's customer in our database
     try:
-        customer_details = Customer.objects.get(user=sys_user, servicenow_username=customer_username)
+        customer_details = Customer.objects.get(user=sys_user, servicenow_username=customer_twitter_id)
     except Customer.DoesNotExist:
         print("No customer account found. Creating...")
-        customer_details = createNewUser(sn, customer_username, sys_user)
+        if not all([customer_twitter_name, customer_twitter_username]):
+            print("Retrieving Twitter account name and username")
+            cu = api.get_user(user_id=customer_twitter_id)
+        customer_details = createNewUser(sn, customer_twitter_id, sys_user)
 
     return customer_details
 
@@ -130,7 +137,7 @@ def getCase(sn, customer_details):
     return case
 
 
-def createCase(sn, customer_details, message, send_as_admin):
+def createCase(sn, customer_details, send_as_admin):
     if send_as_admin:
         print("Calling SNOW instance as admin")
         servicenow_credentials = (sn.admin_user, sn.admin_password)
@@ -146,7 +153,7 @@ def createCase(sn, customer_details, message, send_as_admin):
         data=json.dumps(
             {
                 "contact_type": "social",
-                "short_description": f"مشاركة من تويتر - {customer_details.servicenow_username}", # Subject
+                "short_description": f"{customer_details.twitter_username} via Twitter", # Subject
                 "comments": message,
             }
         )
@@ -191,6 +198,8 @@ def createNewUser(sn, customer_username, sys_user):
         data=json.dumps(
             {
                 "user_name": customer_username,
+                "first_name": customer_first_name,
+                "last_name": customer_last_name
             }
         )
     )
@@ -339,7 +348,16 @@ class TwitterActivity(APIView):
         message = None
         send_as_admin = False
         quick_reply = None
+        customer_twitter_id = None
+        customer_twitter_name = None
+        customer_twitter_username = None
 
+        # AUTHENTICATE TWITTER
+        auth = tweepy.OAuthHandler(settings.API_KEY, settings.API_KEY_SECRET)
+        auth.set_access_token(keys.access_token, keys.access_token_secret)
+        api = API(auth, wait_on_rate_limit=True)
+
+        print(data)
 
         # HANDLE DIRECT MESSAGES
         if data.get("direct_message_events"):
@@ -362,8 +380,8 @@ class TwitterActivity(APIView):
         elif data.get("user_has_blocked") is not None:
             for tweet in data.get("tweet_create_events"):
                 message = tweet.get("text")
-                twitter_username = tweet.get("user").get("screen_name")
-                name = tweet.get("user").get("name")
+                customer_twitter_name = tweet.get("user").get("name")
+                customer_twitter_username = tweet.get("user").get("screen_name")
                 print("Getting mention sender")
                 sender = tweet.get("user").get("id")
                 print(sender)
@@ -378,12 +396,12 @@ class TwitterActivity(APIView):
             # We determine whether the message in being received by our user
             # or being sent by from Twitter, by checking sender and userid for equality
             send_as_admin = True
-            customer_username = target # If our user is the sender, then we want to create an account for the recepient (their client)
+            customer_twitter_id = target # If our user is the sender, then we want to create an account for the recepient (their client)
         else:
-            customer_username = sender
+            customer_twitter_id = sender
             send_as_admin = False
 
-        customer_details = getCustomerDetails(sn, sys_user, customer_username)
+        customer_details = getCustomerDetails(sn, sys_user, customer_twitter_id, customer_twitter_username, customer_twitter_name, api)
 
         if not customer_details:
             return Response({"message": "Failed to retrieve customer details or to create new customer account"}, status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -392,6 +410,7 @@ class TwitterActivity(APIView):
         if quick_reply:
             customer_details.language = quick_reply.get("metadata")
             customer_details.save()
+            detect_intent_texts("twittnow-flym", sender, message, customer_details.language, keys, sender, customer_details)
             return Response({"message": "Changed customer language"}, status.HTTP_200_OK)
 
         # Check if an open case exists for this customer
@@ -414,15 +433,11 @@ class TwitterActivity(APIView):
             updated_case = updateCase(case[0].get("sys_id"), sn, customer_details, message, send_as_admin, "description")
 
             if customer_details.language == "ar-sa":
-                text = f"لقد تم انشاء البلاغ رقم {case[0].get('number')} في نظام ادارة خدمة الشركاء"
+                text = f"{case[0].get('number')} نشكر لك تواصلك مع مركز خدمات الشركاء ونفيدك بأنه تم تسجيل طلبك رقم"
             else:
                 text = f"Your Case {case[0].get('number')} has been registered with Partners Care System."
 
             if not send_as_admin:
-                # AUTHENTICATE TWITTER
-                auth = tweepy.OAuthHandler(settings.API_KEY, settings.API_KEY_SECRET)
-                auth.set_access_token(keys.access_token, keys.access_token_secret)
-                api = API(auth, wait_on_rate_limit=True)
                 dm = api.send_direct_message(
                     recipient_id=sender,
                     text=text
@@ -438,7 +453,8 @@ class TwitterActivity(APIView):
                 ]
             ):
                 print("Creating new case")
-                new_case = createCase(sn, customer_details, message, send_as_admin)
+                new_case = createCase(sn, customer_details, send_as_admin)
+                print("Querying for case description")
             else:
                 # Check if send_as_admin is True -> We don't want to generate responses for
                 # messages sent by the admin themselves. 
