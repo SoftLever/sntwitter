@@ -1,8 +1,8 @@
 import requests
 import json
 
-import tweepy
-import os
+# import tweepy
+# import os
 
 def testTwitterActivity():
     response = requests.post(
@@ -19,17 +19,20 @@ def testTwitterActivity():
                     "message_create": {
                         "sender_id":"2829183065",
                         "target":{
-                            "recepient_id":"1084028173082419200"
+                            "recipient_id":"1084028173082419200"
                         },
                         "message_data": {
-                            "text": "English",
-                            "quick_reply_response": {
-                                "metadata": "ar-sa"
-                            }
+                            "text": "I am facing this massive problem", # upendocollins12@gmail.com 0798380239 Here is my descritpion
+                            # "quick_reply_response": {
+                            #     "metadata": "ar-sa"
+                            # }
                         }
                     }
                 }
-            ]
+            ],
+            "users": {
+                "2829183065": {"name": "adika", "screen_name": "adikamdogo"}
+            }
         })
     )
 
@@ -58,4 +61,4 @@ def testDirectMessage():
 
     return
 
-testDirectMessage()
+testTwitterActivity()
