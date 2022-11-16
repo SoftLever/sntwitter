@@ -106,17 +106,14 @@ def detect_intent_texts(project_id, session_id, text, language_code, keys, sende
     return response.query_result
 
 
-def getCustomerDetails(sn, sys_user, customer_twitter_id, customer_twitter_username, customer_twitter_name, api):
+def getCustomerDetails(sn, sys_user, customer_twitter_id, customer_twitter_name):
     print("Getting customer details")
     # Check if the sender is already the recepient's customer in our database
     try:
         customer_details = Customer.objects.get(user=sys_user, servicenow_username=customer_twitter_id)
     except Customer.DoesNotExist:
         print("No customer account found. Creating...")
-        if not all([customer_twitter_name, customer_twitter_username]):
-            print("Retrieving Twitter account name and username")
-            cu = api.get_user(user_id=customer_twitter_id)
-        customer_details = createNewUser(sn, customer_twitter_id, sys_user)
+        customer_details = createNewUser(sn, customer_twitter_id, sys_user, customer_twitter_name)
 
     return customer_details
 
@@ -137,7 +134,7 @@ def getCase(sn, customer_details):
     return case
 
 
-def createCase(sn, customer_details, send_as_admin):
+def createCase(sn, customer_details, send_as_admin, message):
     if send_as_admin:
         print("Calling SNOW instance as admin")
         servicenow_credentials = (sn.admin_user, sn.admin_password)
@@ -145,7 +142,7 @@ def createCase(sn, customer_details, send_as_admin):
         print("Calling SNOW instance as customer user")
         servicenow_credentials = (customer_details.servicenow_username, customer_details.servicenow_password)
 
-    message = f"Customer Details;\n{'*' * 20}\nName: {customer_details.first_name} {customer_details.last_name}\nEmail: {customer_details.email}\nPhone: {customer_details.phone_number}\nNational ID: {customer_details.national_id}"
+    customer_details = f"Customer Details;\n{'*' * 20}\nName: {customer_details.first_name} {customer_details.last_name}\nEmail: {customer_details.email}\nPhone: {customer_details.phone_number}\nNational ID: {customer_details.national_id}"
 
     case_response = requests.post(
         f"{sn.instance_url}/api/sn_customerservice/case",
@@ -154,7 +151,8 @@ def createCase(sn, customer_details, send_as_admin):
             {
                 "contact_type": "social",
                 "short_description": f"{customer_details.twitter_username} via Twitter", # Subject
-                "comments": message,
+                "comments": customer_details,
+                "description": message
             }
         )
     )
@@ -190,7 +188,7 @@ def updateCase(case, sn, customer_details, message, send_as_admin, field="commen
     return case
 
 
-def createNewUser(sn, customer_username, sys_user):
+def createNewUser(sn, customer_username, sys_user, customer_twitter_name):
     # Create a user on Servicenow
     sn_customer_user = requests.post(
         f"{sn.instance_url}/api/now/table/sys_user",
@@ -198,8 +196,8 @@ def createNewUser(sn, customer_username, sys_user):
         data=json.dumps(
             {
                 "user_name": customer_username,
-                "first_name": customer_first_name,
-                "last_name": customer_last_name
+                "first_name": customer_twitter_name.split(" ")[0],
+                "last_name": customer_twitter_name.split(" ")[-1]
             }
         )
     )
@@ -369,6 +367,8 @@ class TwitterActivity(APIView):
                     print("Getting Direct message target and sender")
                     sender = message_create.get("sender_id")
                     target = message_create.get("target").get("recipient_id")
+                    customer_twitter_name = event.get("users").get(sender).get("name")
+                    customer_twitter_username = event.get("users").get(sender).get("screen_name")
                     print(f"{sender} -> {target}")
 
                     message = message_create.get("message_data").get("text")
@@ -453,7 +453,7 @@ class TwitterActivity(APIView):
                 ]
             ):
                 print("Creating new case")
-                new_case = createCase(sn, customer_details, send_as_admin)
+                new_case = createCase(sn, customer_details, send_as_admin, message)
                 print("Querying for case description")
             else:
                 # Check if send_as_admin is True -> We don't want to generate responses for
