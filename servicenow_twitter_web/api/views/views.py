@@ -135,7 +135,7 @@ def getCase(sn, customer_details):
     return case
 
 
-def createCase(sn, customer_details, send_as_admin, message, sender, api):
+def createCase(sn, customer_details, message, sender, api):
     servicenow_credentials = (customer_details.servicenow_username, customer_details.servicenow_password)
 
     customer_details_string = f"Customer Details;\n{'*' * 20}\nName: {customer_details.first_name} {customer_details.last_name}\nEmail: {customer_details.email}\nPhone: {customer_details.phone_number}\nNational ID: {customer_details.national_id}"
