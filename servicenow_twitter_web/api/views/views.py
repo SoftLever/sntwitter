@@ -156,19 +156,16 @@ def createCase(sn, customer_details, message, sender, api):
 
     case = case_response.json()
 
-    print(case)
-
     print("Sending case creation acknowledgement")
     if customer_details.language == "ar-sa":
         text = f"{case.get('result').get('number')} نشكر لك تواصلك مع مركز خدمات الشركاء ونفيدك بأنه تم تسجيل طلبك رقم"
     else:
         text = f"Your Case {case.get('result').get('number')} has been registered with Partners Care System."
 
-    if not send_as_admin:
-        dm = api.send_direct_message(
-            recipient_id=sender,
-            text=text
-        )
+    dm = api.send_direct_message(
+        recipient_id=sender,
+        text=text
+    )
 
     return case
 
