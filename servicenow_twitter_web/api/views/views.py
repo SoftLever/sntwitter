@@ -96,11 +96,11 @@ def detect_intent_texts(project_id, session_id, text, language_code, keys, custo
 
     if response.query_result.all_required_params_present and parameters:
         print("Saving collected information")
-        customer_details.first_name = parameters.get("FirstName", {}).get("name", "John").strip("tnow001")
-        customer_details.last_name = parameters.get("LastName", {}).get("name", "Doe").strip("tnow001")
-        customer_details.email = parameters.get("Email").strip("tnow001")
-        customer_details.phone_number = parameters.get("PhoneNumber").strip("tnow001")
-        customer_details.national_id = parameters.get("NationalID").strip("tnow001")
+        customer_details.first_name = parameters.get("FirstName", {}).get("name", "John").replace("tnow001", "")
+        customer_details.last_name = parameters.get("LastName", {}).get("name", "Doe").replace("tnow001", "")
+        customer_details.email = parameters.get("Email").replace("tnow001", "")
+        customer_details.phone_number = parameters.get("PhoneNumber").replace("tnow001", "")
+        customer_details.national_id = parameters.get("NationalID").replace("tnow001", "")
         customer_details.save()
         return None
 
@@ -136,10 +136,7 @@ def getCase(sn, customer_details):
 
 
 def createCase(sn, customer_details, send_as_admin, message, sender, api):
-    if send_as_admin:
-        servicenow_credentials = (sn.admin_user, sn.admin_password)
-    else:
-        servicenow_credentials = (customer_details.servicenow_username, customer_details.servicenow_password)
+    servicenow_credentials = (customer_details.servicenow_username, customer_details.servicenow_password)
 
     customer_details_string = f"Customer Details;\n{'*' * 20}\nName: {customer_details.first_name} {customer_details.last_name}\nEmail: {customer_details.email}\nPhone: {customer_details.phone_number}\nNational ID: {customer_details.national_id}"
 
@@ -151,8 +148,7 @@ def createCase(sn, customer_details, send_as_admin, message, sender, api):
         data=json.dumps(
             {
                 "contact_type": "social",
-                "short_description": f"@{customer_details.twitter_username} via Twitter", # Subject
-                # "comments": customer_details_string,
+                "short_description": f"@{customer_details.twitter_username} via Twitter",
                 "description": description
             }
         )
@@ -254,7 +250,7 @@ def createNewUser(sn, customer_username, sys_user, customer_twitter_username, cu
                 )
             )
 
-            print(f"Assining {customer_username} csm_ws_integration role")
+            print(f"Assinging user {customer_username} csm_ws_integration role")
 
             # Get the required role
             role_object = requests.get(
@@ -479,7 +475,12 @@ class TwitterActivity(APIView):
                 ]
             ):
                 print("All required fields are available")
-                new_case = createCase(sn, customer_details, send_as_admin, message, sender, api)
+                if not send_as_admin:
+                    # Only create a case if the descritption is given by a customer
+                    print("Creating case")
+                    new_case = createCase(sn, customer_details, message, sender, api)
+                else:
+                    print("Skipping message because it is from admin")
             else:
                 # Check if send_as_admin is True -> We don't want to generate responses for
                 # messages sent by the admin themselves. 
