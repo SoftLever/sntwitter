@@ -1,16 +1,18 @@
 from tweepy import API
 from django.conf import settings
 
+import json
+
 # Override API class to add new methods that are not offered by tweepy
 # e.g account activity functionality
 class API(API):
-    def request2(self, method, url, params={}):
+    def request2(self, method, url, params={}, data={}):
         # Apply authentication
         auth = None
         if self.auth:
             auth = self.auth.apply_auth()
 
-        resp = self.session.request(method, url, auth=auth, params=params)
+        resp = self.session.request(method, url, auth=auth, params=params, data=data)
 
         # We get 204s when subscribing
         if resp.status_code not in [200, 204]:
@@ -60,4 +62,66 @@ class API(API):
         return self.request2(
             "DELETE",
             f"https://api.twitter.com/1.1/account_activity/all/{settings.DEV_ENV}/subscriptions.json"
+        )
+
+
+    def createWelcomeMessage(self, **kwargs):
+        options = kwargs.get("quick_reply_options")
+
+        data = {
+            "welcome_message" : {
+                "name": kwargs.get("name"),
+                "message_data": {
+                    "text": kwargs.get("text")
+                }
+              }
+        }
+
+        if options:
+            data["welcome_message"]["message_data"]["quick_reply"] = {
+                "type": "options",
+                "options": [json.loads(o) for o in options]
+            }
+
+        return self.request2(
+            "POST",
+            "https://api.twitter.com/1.1/direct_messages/welcome_messages/new.json",
+            data=json.dumps(data)
+        ).json()
+
+    def listWelcomeMessages(self, **kwargs):
+        return self.request2(
+            "GET",
+            "https://api.twitter.com/1.1/direct_messages/welcome_messages/list.json"
+        ).json()
+
+    def deleteWelcomeMessage(self, message_id):
+        return self.request2(
+            "DELETE",
+            "https://api.twitter.com/1.1/direct_messages/welcome_messages/destroy.json",
+            {"id": message_id}
+        )
+
+    def createWelcomeMessageRule(self, message_id):
+        return self.request2(
+            "POST",
+            "https://api.twitter.com/1.1/direct_messages/welcome_messages/rules/new.json",
+            data=json.dumps({
+              "welcome_message_rule": {
+                "welcome_message_id": message_id
+              }
+            })
+        ).json()
+
+    def listWelcomeMessageRules(self):
+        return self.request2(
+            "GET",
+            "https://api.twitter.com/1.1/direct_messages/welcome_messages/rules/list.json"
+        ).json()
+
+    def deleteWelcomeMessageRule(self, message_id):
+        return self.request2(
+            "DELETE",
+            "https://api.twitter.com/1.1/direct_messages/welcome_messages/rules/destroy.json",
+            {"id": message_id}
         )
