@@ -247,9 +247,8 @@ def createNewUser(sn, customer_username, sys_user, customer_twitter_username, cu
                 )
             )
 
-            print(f"Assinging user {customer_username} csm_ws_integration role")
-
-            # Get the required role
+            print(f"Retrieving sys IDs of required roles;")
+            # Get the required roles
             role_object = requests.get(
                 f"{sn.instance_url}/api/now/table/sys_user_role",
                 params={
@@ -261,7 +260,7 @@ def createNewUser(sn, customer_username, sys_user, customer_twitter_username, cu
 
             role = role_object.json().get("result")[0].get("sys_id")
 
-            # Assign the user the role
+            print(f"Assinging user {customer_username} csm_ws_integration role")
             role_response = requests.post(
                 f"{sn.instance_url}/api/now/table/sys_user_has_role",
                 auth=(sn.admin_user, sn.admin_password),
