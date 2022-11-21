@@ -253,24 +253,26 @@ def createNewUser(sn, customer_username, sys_user, customer_twitter_username, cu
                 f"{sn.instance_url}/api/now/table/sys_user_role",
                 params={
                     "sysparm_fields": "sys_id",
-                    "name":"csm_ws_integration"
+                    "sysparm_query":"name=task_editor^ORname=csm_ws_integration"
                 },
                 auth=(sn.admin_user, sn.admin_password)
             )
 
-            role = role_object.json().get("result")[0].get("sys_id")
+            roles = [r.get("sys_id") for r in role_object.json().get("result")]
 
-            print(f"Assinging user {customer_username} csm_ws_integration role")
-            role_response = requests.post(
-                f"{sn.instance_url}/api/now/table/sys_user_has_role",
-                auth=(sn.admin_user, sn.admin_password),
-                data=json.dumps(
-                    {
-                        "user": sys_id,
-                        "role": role,
-                    }
+            print(f"Assinging user {customer_username} csm_ws_integration and task_editor roles")
+
+            for role in roles:
+                role_response = requests.post(
+                    f"{sn.instance_url}/api/now/table/sys_user_has_role",
+                    auth=(sn.admin_user, sn.admin_password),
+                    data=json.dumps(
+                        {
+                            "user": sys_id,
+                            "role": role,
+                        }
+                    )
                 )
-            )
 
             print("Creating customer details record")
 
