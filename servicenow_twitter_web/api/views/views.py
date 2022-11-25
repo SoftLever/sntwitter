@@ -39,15 +39,15 @@ from google.protobuf.json_format import MessageToDict
 def sendTwitterDirectMessage(keys, recipient_id, message):
     # AUTHENTICATE TWITTER
     auth = tweepy.OAuthHandler(settings.API_KEY, settings.API_KEY_SECRET)
-    auth.set_access_token(keys.access_token, keys.access_token_secret)
+    auth.set_access_token(settings.access_token, keys.access_token_secret)
     api = API(auth, wait_on_rate_limit=True)
 
-    api.send_direct_message(
+    dm = api.send_direct_message(
         recipient_id=recipient_id,
         text=message
     )
 
-    return
+    return dm
 
 
 def detect_intent_texts(customer_details, text, language_code, keys, customer_twitter_id, sn):
@@ -292,7 +292,6 @@ def createNewUser(sn, customer_username, sys_user, customer_twitter_username, cu
 class Events(APIView):
     def post(self, request):
         user = request.user
-        print(user)
         message = request.POST.get("message")
 
         try:
@@ -305,11 +304,10 @@ class Events(APIView):
         # Get the authenticated user's Twitter access tokens
         try:
             keys = Twitter.objects.get(user=user)
-            print(keys)
         except ObjectDoesNotExist:
             return Response({"message": "No Twitter account. Add a twitter account from you dashboard to send messages"})
 
-        sendTwitterDirectMessage(keys, target, message)
+        dm = sendTwitterDirectMessage(keys, target, message)
 
         return Response(
             {"message_id": dm.id},
@@ -340,16 +338,17 @@ class TwitterActivity(APIView):
     def post(self, request):
         data = request.data
 
+        print(data)
+        print(data.__dict__)
+
         # Find the user details associated with activity
         for_user_id = data.get("for_user_id")
         print(f"Received event for user with twitter id {for_user_id}")
 
         try:
             keys = Twitter.objects.get(userid=for_user_id)
-            print(keys)
             userid = keys.userid
             sys_user = keys.user
-            print(sys_user)
         except ObjectDoesNotExist:
             return Response({"message": "the user with this twitter account does not exist"})
 
