@@ -435,18 +435,24 @@ class TwitterActivity(APIView):
             print("Failed to retrieve customer details or to create new customer account")
             return Response({"message": "Failed to retrieve customer details or to create new customer account"}, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+        # Check if an open case exists for this customer
+        print("Checking if active case exists")
+        case = getCase(sn, customer_details)
+
+
         # Check if the message is a request to change language
         if quick_reply:
             print("Language selection message received")
             customer_details.language = quick_reply.get("metadata")
             customer_details.save()
             print("Calling dialogflow after language selection")
-            detect_intent_texts(customer_details, message, customer_details.language, keys, customer_twitter_id, sn)
-            return Response({"message": "Changed customer language"}, status.HTTP_200_OK)
 
-        # Check if an open case exists for this customer
-        print("Checking if active case exists")
-        case = getCase(sn, customer_details)
+            if case:
+                sendTwitterDirectMessage(keys, customer_twitter_id, f"You have an active case {case[0].get("number")}")
+            else:
+                detect_intent_texts(customer_details, message, customer_details.language, keys, customer_twitter_id, sn)
+
+            return Response({"message": "Changed customer language"}, status.HTTP_200_OK)
 
         if case:
             print(f"{len(case)} active cases exist. Updating the latest entry")
