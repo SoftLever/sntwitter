@@ -166,6 +166,7 @@ def createCase(sn, customer_details, sender, description):
 
 def updateCase(case, sn, customer_details, message, send_as_admin, message_sent_from_app, field="comments"):
     if message_sent_from_app:
+        print("Message ignored because it's from a third party app")
         return
 
     if send_as_admin:
@@ -340,9 +341,6 @@ class TwitterActivity(APIView):
 
     def post(self, request):
         data = request.data
-
-        print(data)
-        print(data.__dict__)
 
         # Find the user details associated with activity
         for_user_id = data.get("for_user_id")
