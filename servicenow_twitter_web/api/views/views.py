@@ -164,7 +164,10 @@ def createCase(sn, customer_details, sender, description):
     return case
 
 
-def updateCase(case, sn, customer_details, message, send_as_admin, field="comments"):
+def updateCase(case, sn, customer_details, message, send_as_admin, message_sent_from_app, field="comments"):
+    if message_sent_from_app:
+        return
+
     if send_as_admin:
         servicenow_credentials = (sn.admin_user, sn.admin_password)
     else:
@@ -366,6 +369,7 @@ class TwitterActivity(APIView):
         print(f"Initializing target to Twittnow user with twitter ID {target}")
         message = None
         send_as_admin = False
+        message_sent_from_app = True if data.get("apps") else False
         quick_reply = None
         customer_twitter_id = None
         customer_twitter_name = None
@@ -451,12 +455,12 @@ class TwitterActivity(APIView):
             case_id = case[0].get("sys_id")
             if case[0].get("description", ""):
                 print("Updating case comments with new message")
-                updateCase(case_id, sn, customer_details, message, send_as_admin)
+                updateCase(case_id, sn, customer_details, message, send_as_admin, message_sent_from_app)
             else:
                 print("Adding description for case")
 
                 if not send_as_admin:
-                    updateCase(case_id, sn, customer_details, message, send_as_admin, "description")
+                    updateCase(case_id, sn, customer_details, message, send_as_admin, message_sent_from_app, "description")
 
                     print("Sending case creation acknowledgement")
                     if customer_details.language == "ar-sa":
