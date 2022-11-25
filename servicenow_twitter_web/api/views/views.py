@@ -461,9 +461,9 @@ class TwitterActivity(APIView):
 
                     print("Sending case creation acknowledgement")
                     if customer_details.language == "ar-sa":
-                        text = f"{case[0].get('result').get('number')} نشكر لك تواصلك مع مركز خدمات الشركاء ونفيدك بأنه تم تسجيل طلبك رقم"
+                        text = f"{case[0].get('number')} نشكر لك تواصلك مع مركز خدمات الشركاء ونفيدك بأنه تم تسجيل طلبك رقم"
                     else:
-                        text = f"Your Case {case[0].get('result').get('number')} has been registered with Partners Care System."
+                        text = f"Your Case {case[0].get('number')} has been registered with Partners Care System."
 
                     sendTwitterDirectMessage(keys, customer_twitter_id, text)
 
