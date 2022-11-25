@@ -448,7 +448,7 @@ class TwitterActivity(APIView):
             print("Calling dialogflow after language selection")
 
             if case:
-                sendTwitterDirectMessage(keys, customer_twitter_id, f"You have an active case {case[0].get("number")}")
+                sendTwitterDirectMessage(keys, customer_twitter_id, f"You have an active case {case[0].get('number')}")
             else:
                 detect_intent_texts(customer_details, message, customer_details.language, keys, customer_twitter_id, sn)
 
