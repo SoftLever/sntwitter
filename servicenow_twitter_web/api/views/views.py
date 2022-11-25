@@ -39,7 +39,7 @@ from google.protobuf.json_format import MessageToDict
 def sendTwitterDirectMessage(keys, recipient_id, message):
     # AUTHENTICATE TWITTER
     auth = tweepy.OAuthHandler(settings.API_KEY, settings.API_KEY_SECRET)
-    auth.set_access_token(settings.access_token, keys.access_token_secret)
+    auth.set_access_token(keys.access_token, keys.access_token_secret)
     api = API(auth, wait_on_rate_limit=True)
 
     dm = api.send_direct_message(
