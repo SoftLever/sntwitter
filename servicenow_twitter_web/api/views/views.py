@@ -36,8 +36,21 @@ import re
 
 from google.protobuf.json_format import MessageToDict
 
+def sendTwitterDirectMessage(keys, recipient_id, message):
+    # AUTHENTICATE TWITTER
+    auth = tweepy.OAuthHandler(settings.API_KEY, settings.API_KEY_SECRET)
+    auth.set_access_token(keys.access_token, keys.access_token_secret)
+    api = API(auth, wait_on_rate_limit=True)
 
-def detect_intent_texts(project_id, session_id, text, language_code, keys, customer_twitter_id, customer_details):
+    api.send_direct_message(
+        recipient_id=recipient_id,
+        text=message
+    )
+
+    return
+
+
+def detect_intent_texts(customer_details, text, language_code, keys, customer_twitter_id, sn):
     """Returns the result of detect intent with texts as inputs.
 
     Using the same `session_id` between requests allows continuation
@@ -46,7 +59,7 @@ def detect_intent_texts(project_id, session_id, text, language_code, keys, custo
 
     session_client = dialogflow.SessionsClient()
 
-    session = session_client.session_path(project_id, session_id)
+    session = session_client.session_path(settings.DIALOGFLOW_PROJECT_ID, customer_details.servicenow_username)
     print("Session path: {}\n".format(session))
 
     # Since we're using a SW agent in place of an arabic one
@@ -83,26 +96,21 @@ def detect_intent_texts(project_id, session_id, text, language_code, keys, custo
 
     print(f"Fulfillment text: {fulfillment_text}\n")
 
-    # AUTHENTICATE TWITTER
-    auth = tweepy.OAuthHandler(settings.API_KEY, settings.API_KEY_SECRET)
-    auth.set_access_token(keys.access_token, keys.access_token_secret)
-    api = API(auth, wait_on_rate_limit=True)
-    dm = api.send_direct_message(
-        recipient_id=customer_twitter_id,
-        text=fulfillment_text
-    )
+    sendTwitterDirectMessage(keys, customer_twitter_id, fulfillment_text)
 
     parameters = response_json.get("queryResult", {}).get("parameters")
 
     if response.query_result.all_required_params_present and parameters:
-        print("Saving collected information")
-        customer_details.first_name = parameters.get("FirstName", {}).get("name", "John").replace("tnow001", "")
-        customer_details.last_name = parameters.get("LastName", {}).get("name", "Doe").replace("tnow001", "")
-        customer_details.email = parameters.get("Email").replace("tnow001", "")
-        customer_details.phone_number = parameters.get("PhoneNumber").replace("tnow001", "")
-        customer_details.national_id = parameters.get("NationalID").replace("tnow001", "")
-        customer_details.save()
-        return None
+        first_name = parameters.get("FirstName", {}).get("name", "John").replace("tnow001", "")
+        last_name = parameters.get("LastName", {}).get("name", "Doe").replace("tnow001", "")
+        email = parameters.get("Email").replace("tnow001", "")
+        phone_number = parameters.get("PhoneNumber").replace("tnow001", "")
+        national_id = parameters.get("NationalID").replace("tnow001", "")
+
+        print("Creating case")
+        message = f"Customer Details;\n{'*' * 20}\nFirst Name: {first_name}\nLast Name: {last_name}\nEmail: {email}\nPhone: {phone_number}\nNational ID: {national_id}"
+
+        createCase(sn, customer_details, customer_twitter_id, message)
 
     return response.query_result
 
@@ -135,13 +143,10 @@ def getCase(sn, customer_details):
     return case
 
 
-def createCase(sn, customer_details, message, sender, api):
+def createCase(sn, customer_details, sender, description):
     servicenow_credentials = (customer_details.servicenow_username, customer_details.servicenow_password)
 
-    customer_details_string = f"Customer Details;\n{'*' * 20}\nName: {customer_details.first_name} {customer_details.last_name}\nEmail: {customer_details.email}\nPhone: {customer_details.phone_number}\nNational ID: {customer_details.national_id}"
-
-    description = f"{customer_details_string}\n\nIssue Description:\n{'*' * 20}\n{message}"
-    print(f"Creating case on Servicenow as {servicenow_credentials[0]} with description:\n{description}")
+    print(f"Creating case on Servicenow as {servicenow_credentials[0]}")
     case_response = requests.post(
         f"{sn.instance_url}/api/sn_customerservice/case",
         auth=servicenow_credentials,
@@ -149,23 +154,12 @@ def createCase(sn, customer_details, message, sender, api):
             {
                 "contact_type": "social",
                 "short_description": f"@{customer_details.twitter_username} via Twitter",
-                "description": description
+                "comments": description
             }
         )
     )
 
     case = case_response.json()
-
-    print("Sending case creation acknowledgement")
-    if customer_details.language == "ar-sa":
-        text = f"{case.get('result').get('number')} نشكر لك تواصلك مع مركز خدمات الشركاء ونفيدك بأنه تم تسجيل طلبك رقم"
-    else:
-        text = f"Your Case {case.get('result').get('number')} has been registered with Partners Care System."
-
-    dm = api.send_direct_message(
-        recipient_id=sender,
-        text=text
-    )
 
     return case
 
@@ -298,6 +292,7 @@ def createNewUser(sn, customer_username, sys_user, customer_twitter_username, cu
 class Events(APIView):
     def post(self, request):
         user = request.user
+        print(user)
         message = request.POST.get("message")
 
         try:
@@ -310,19 +305,11 @@ class Events(APIView):
         # Get the authenticated user's Twitter access tokens
         try:
             keys = Twitter.objects.get(user=user)
+            print(keys)
         except ObjectDoesNotExist:
             return Response({"message": "No Twitter account. Add a twitter account from you dashboard to send messages"})
 
-        # AUTHENTICATE TWITTER
-        auth = tweepy.OAuthHandler(settings.API_KEY, settings.API_KEY_SECRET)
-        auth.set_access_token(keys.access_token, keys.access_token_secret)
-        api = API(auth, wait_on_rate_limit=True)
-
-        # Send message to Twitter
-        dm = api.send_direct_message(
-            recipient_id=target,
-            text=message
-        )
+        sendTwitterDirectMessage(keys, target, message)
 
         return Response(
             {"message_id": dm.id},
@@ -359,8 +346,10 @@ class TwitterActivity(APIView):
 
         try:
             keys = Twitter.objects.get(userid=for_user_id)
+            print(keys)
             userid = keys.userid
             sys_user = keys.user
+            print(sys_user)
         except ObjectDoesNotExist:
             return Response({"message": "the user with this twitter account does not exist"})
 
@@ -451,7 +440,7 @@ class TwitterActivity(APIView):
             customer_details.language = quick_reply.get("metadata")
             customer_details.save()
             print("Calling dialogflow after language selection")
-            detect_intent_texts("twittnow-flym", customer_twitter_id, message, customer_details.language, keys, customer_twitter_id, customer_details)
+            detect_intent_texts(customer_details, message, customer_details.language, keys, customer_twitter_id, sn)
             return Response({"message": "Changed customer language"}, status.HTTP_200_OK)
 
         # Check if an open case exists for this customer
@@ -460,32 +449,33 @@ class TwitterActivity(APIView):
 
         if case:
             print(f"{len(case)} active cases exist. Updating the latest entry")
-            updated_case = updateCase(case[0].get("sys_id"), sn, customer_details, message, send_as_admin)
+            case_id = case[0].get("sys_id")
+            if case[0].get("description", ""):
+                print("Updating case comments with new message")
+                updateCase(case_id, sn, customer_details, message, send_as_admin)
+            else:
+                print("Adding description for case")
+
+                if not send_as_admin:
+                    updateCase(case_id, sn, customer_details, message, send_as_admin, "description")
+
+                    print("Sending case creation acknowledgement")
+                    if customer_details.language == "ar-sa":
+                        text = f"{case[0].get('result').get('number')} نشكر لك تواصلك مع مركز خدمات الشركاء ونفيدك بأنه تم تسجيل طلبك رقم"
+                    else:
+                        text = f"Your Case {case[0].get('result').get('number')} has been registered with Partners Care System."
+
+                    sendTwitterDirectMessage(keys, customer_twitter_id, text)
+
             return Response({"message": "Case updated"}, status.HTTP_200_OK)
         else:
             print("No active case exists")
-            # Check if all custom fields for this customer have been collected
-            if all(
-                [
-                    customer_details.first_name, customer_details.last_name,
-                    customer_details.phone_number, customer_details.email,
-                    customer_details.national_id
-                ]
-            ):
-                print("All required fields are available")
-                if not send_as_admin:
-                    # Only create a case if the descritption is given by a customer
-                    print("Creating case")
-                    new_case = createCase(sn, customer_details, message, sender, api)
-                else:
-                    print("Skipping message because it is from admin")
-            else:
-                # Check if send_as_admin is True -> We don't want to generate responses for
-                # messages sent by the admin themselves. 
-                if not send_as_admin:
-                    print("Some customer information is missing. Calling dialogflow")
-                    detect_intent_texts("twittnow-flym", sender, message, customer_details.language, keys, sender, customer_details)
-                else:
-                    print("Skipping dialogflow because sender is admin")
+
+            # Check if send_as_admin is True -> We don't want to generate responses for
+            # messages sent by the admin themselves. 
+            if not send_as_admin:
+                print("Calling dialogflow")
+                detect_intent_texts(customer_details, message, customer_details.language, keys, customer_twitter_id, sn)
+
 
         return Response({"message": "received data"}, status.HTTP_200_OK)

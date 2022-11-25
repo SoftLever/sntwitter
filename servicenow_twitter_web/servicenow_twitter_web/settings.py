@@ -148,3 +148,6 @@ ACCESS_TOKEN = os.environ.get("ACCESS_TOKEN")
 ACCESS_TOKEN_SECRET = os.environ.get("ACCESS_TOKEN_SECRET")
 CALLBACK_URL = os.environ.get("CALLBACK_URL", "http://127.0.0.1:8000/twitter-auth/")
 DEV_ENV = os.environ.get("DEV_ENV", "production")
+
+# Dialogflow configs
+DIALOGFLOW_PROJECT_ID = os.environ.get("DIALOGFLOW_PROJECT_ID", "twittnow-flym")

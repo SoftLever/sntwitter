@@ -22,7 +22,7 @@ def testTwitterActivity():
                             "recipient_id":"1084028173082419200"
                         },
                         "message_data": {
-                            "text": "I am facing this massive problem", # upendocollins12@gmail.com 0798380239 Here is my descritpion
+                            "text": "And now let's update stuff",
                             # "quick_reply_response": {
                             #     "metadata": "ar-sa"
                             # }
